@@ -1,0 +1,689 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nexus iOS - Advanced Simulation Suite</title>
+    <style>
+        :root {
+            --bg-color: #050507;
+            --card-bg: rgba(18, 18, 24, 0.7);
+            --card-border: rgba(255, 255, 255, 0.08);
+            --accent-cyan: #00f2fe;
+            --accent-purple: #4facfe;
+            --accent-emerald: #10b981;
+            --accent-danger: #ef4444;
+            --text-main: #f3f4f6;
+            --text-muted: #9ca3af;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            padding: 20px;
+            overflow-x: hidden;
+            background-image: 
+                radial-gradient(circle at 15% 15%, rgba(0, 242, 254, 0.08) 0%, transparent 40%),
+                radial-gradient(circle at 85% 85%, rgba(79, 172, 254, 0.08) 0%, transparent 40%);
+        }
+
+        /* Disclaimer Banner */
+        .disclaimer-banner {
+            width: 100%;
+            max-width: 480px;
+            background: rgba(239, 68, 68, 0.12);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            color: #f87171;
+            padding: 8px 12px;
+            border-radius: 10px;
+            font-size: 11px;
+            font-weight: 600;
+            text-align: center;
+            margin-bottom: 16px;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+
+        /* Device Container / Frame */
+        .device-frame {
+            width: 100%;
+            max-width: 420px;
+            height: 840px;
+            background: #000000;
+            border: 12px solid #27272a;
+            border-radius: 48px;
+            position: relative;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7), 0 0 0 2px rgba(255, 255, 255, 0.1);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* Dynamic Island / Notch */
+        .notch {
+            position: absolute;
+            top: 12px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 120px;
+            height: 30px;
+            background: #121215;
+            border-radius: 20px;
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            padding-right: 10px;
+            transition: width 0.3s ease;
+        }
+        .notch.active {
+            width: 180px;
+            background: #000;
+            border: 1px solid rgba(0, 242, 254, 0.3);
+        }
+        .notch-cam {
+            width: 10px;
+            height: 10px;
+            background: #050507;
+            border-radius: 50%;
+        }
+
+        /* App Views */
+        .view {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            padding: 55px 20px 25px 20px;
+            overflow-y: auto;
+            transition: opacity 0.4s ease, transform 0.4s ease;
+            background: var(--bg-color);
+        }
+        .view.hidden {
+            opacity: 0;
+            pointer-events: none;
+            transform: scale(0.96);
+            display: none;
+        }
+
+        /* Tool Header */
+        .app-header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .app-logo {
+            font-size: 26px;
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--accent-cyan), var(--accent-purple));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 4px;
+        }
+        .app-subtitle {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        /* Device Bio Card */
+        .bio-card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            backdrop-filter: blur(16px);
+            border-radius: 16px;
+            padding: 16px;
+            margin-bottom: 16px;
+        }
+        .bio-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 13px;
+            margin-bottom: 8px;
+        }
+        .bio-row:last-child {
+            margin-bottom: 0;
+        }
+        .bio-label {
+            color: var(--text-muted);
+        }
+        .bio-value {
+            font-weight: 600;
+        }
+        .bio-value.status-safe {
+            color: var(--accent-cyan);
+        }
+        .bio-value.status-danger {
+            color: var(--accent-danger);
+        }
+
+        /* Action Buttons & Triggers */
+        .btn {
+            width: 100%;
+            padding: 16px;
+            border-radius: 14px;
+            border: none;
+            font-size: 15px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, var(--accent-cyan), var(--accent-purple));
+            color: #000;
+            box-shadow: 0 8px 20px rgba(0, 242, 254, 0.25);
+        }
+        .btn-primary:hover {
+            opacity: 0.9;
+            transform: translateY(-1px);
+        }
+        .btn-primary:active {
+            transform: translateY(1px);
+        }
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        /* Terminal Console Box */
+        .console-box {
+            background: #000000;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 14px;
+            height: 220px;
+            margin-top: 16px;
+            padding: 12px;
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+            font-size: 11px;
+            color: var(--accent-cyan);
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        .console-line {
+            line-height: 1.4;
+            word-break: break-all;
+        }
+        .console-line.success { color: var(--accent-emerald); }
+        .console-line.warn { color: #f59e0b; }
+
+        /* Progress Bar */
+        .progress-container {
+            margin-top: 16px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            height: 8px;
+            overflow: hidden;
+            position: relative;
+        }
+        .progress-bar {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, var(--accent-cyan), var(--accent-purple));
+            transition: width 0.3s ease;
+            border-radius: 10px;
+        }
+
+        /* Respring Animation Layer */
+        #respring-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #000;
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.5s ease;
+        }
+        #respring-overlay.active {
+            opacity: 1;
+            pointer-events: all;
+        }
+        .apple-logo {
+            width: 50px;
+            height: 50px;
+            fill: #ffffff;
+            animation: pulse-logo 1.5s infinite alternate;
+        }
+        @keyframes pulse-logo {
+            0% { transform: scale(0.95); opacity: 0.7; }
+            100% { transform: scale(1.05); opacity: 1; }
+        }
+
+        /* Mock Package Manager / SpringBoard UI */
+        .springboard-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+        .springboard-title {
+            font-size: 20px;
+            font-weight: 750;
+        }
+        
+        /* Navigation Tabs Inside Package Manager */
+        .pm-tabs {
+            display: flex;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            padding: 4px;
+            margin-bottom: 16px;
+        }
+        .pm-tab {
+            flex: 1;
+            text-align: center;
+            padding: 8px;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-muted);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .pm-tab.active {
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--text-main);
+        }
+
+        .tab-content {
+            display: none;
+            flex-direction: column;
+            gap: 12px;
+            flex: 1;
+            overflow-y: auto;
+        }
+        .tab-content.active {
+            display: flex;
+        }
+
+        /* Tweak Cards */
+        .tweak-card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 14px;
+            padding: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .tweak-info h4 {
+            font-size: 14px;
+            margin-bottom: 2px;
+        }
+        .tweak-info p {
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+        .tweak-btn {
+            background: rgba(0, 242, 254, 0.15);
+            color: var(--accent-cyan);
+            border: 1px solid rgba(0, 242, 254, 0.3);
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-size: 11px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .tweak-btn.installed {
+            background: rgba(16, 185, 129, 0.15);
+            color: var(--accent-emerald);
+            border-color: rgba(16, 185, 129, 0.3);
+        }
+
+        /* Embedded Terminal View */
+        .embedded-terminal {
+            background: #000;
+            border: 1px solid var(--card-border);
+            border-radius: 12px;
+            padding: 10px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            font-family: monospace;
+            font-size: 11px;
+        }
+        .terminal-output {
+            flex: 1;
+            overflow-y: auto;
+            margin-bottom: 8px;
+            color: var(--accent-cyan);
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        .terminal-input-row {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            padding-top: 6px;
+        }
+        .terminal-input-row span {
+            color: var(--accent-emerald);
+        }
+        .terminal-input {
+            background: transparent;
+            border: none;
+            color: #fff;
+            outline: none;
+            font-family: monospace;
+            font-size: 11px;
+            width: 100%;
+        }
+
+        /* Footer Watermark */
+        .device-footer {
+            margin-top: auto;
+            text-align: center;
+            font-size: 10px;
+            color: var(--text-muted);
+            padding-top: 8px;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="disclaimer-banner">
+        ⚠️ Simulation Demo — Not a Real iOS Exploit
+    </div>
+
+    <div class="device-frame">
+        <!-- Dynamic Island status indicator -->
+        <div class="notch" id="notch">
+            <div class="notch-cam"></div>
+        </div>
+
+        <!-- Respring Transition Overlay -->
+        <div id="respring-overlay">
+            <svg class="apple-logo" viewBox="0 0 170 170">
+                <path d="M150.37 130.25c-2.45 5.66-5.35 10.87-8.71 15.66-4.58 6.53-8.33 11.05-11.22 13.56-4.48 4.12-9.28 6.23-14.42 6.35-3.69 0-8.14-1.05-13.32-3.18-5.19-2.12-9.97-3.17-14.34-3.17-4.58 0-9.49 1.05-14.75 3.17-5.26 2.13-9.5 3.24-12.74 3.35-4.35.13-9.1-1.9-14.24-6.08-3.04-2.52-6.85-7.1-11.43-13.74-6.08-8.87-10.97-18.49-14.67-28.87-3.7-10.38-5.55-20.34-5.55-29.87 0-13.13 3.32-23.82 9.97-32.07 6.65-8.25 15.01-12.45 25.08-12.6 4.78 0 10.02 1.27 15.74 3.8 5.72 2.54 9.54 3.81 11.46 3.81 1.63 0 5.48-1.33 11.55-3.99 6.07-2.67 11.18-3.92 15.34-3.77 13.79.54 24.32 5.92 31.58 16.14-11.75 7.15-17.5 16.54-17.26 28.17.22 9.4 3.96 17.3 11.22 23.72 7.26 6.43 15.98 9.77 26.17 10.03-3.21 9.94-7.56 19.82-13.06 29.64zm-30.82-96.64c0-7.85 2.76-15.13 8.28-21.84 5.52-6.71 12.56-10.82 21.12-12.33.22 1.3 33 2.18 33 2.18s.11 1.41.11 4.24c0 7.39-2.79 14.52-8.38 21.39-5.58 6.87-12.63 11.02-21.14 12.44-.33-1.41-3.99-2.28-3.99-2.28s.09-1.54.09-3.8z"/>
+            </svg>
+        </div>
+
+        <!-- PHASE 1: JAIRBREAK TOOL VIEW -->
+        <div class="view" id="tool-view">
+            <div class="app-header">
+                <div class="app-logo">NEXUS v2.0</div>
+                <div class="app-subtitle">Advanced Kernel & Rootless Utility</div>
+            </div>
+
+            <div class="bio-card">
+                <div class="bio-row">
+                    <span class="bio-label">Device Target:</span>
+                    <span class="bio-value">iPhone 15 Pro Max</span>
+                </div>
+                <div class="bio-row">
+                    <span class="bio-label">Operating System:</span>
+                    <span class="bio-value">iOS 17.0 (21A346)</span>
+                </div>
+                <div class="bio-row">
+                    <span class="bio-label">Architecture:</span>
+                    <span class="bio-value">A17 Pro (ARM64e)</span>
+                </div>
+                <div class="bio-row">
+                    <span class="bio-label">Status State:</span>
+                    <span class="bio-value status-danger" id="status-text">Unjailbroken</span>
+                </div>
+            </div>
+
+            <button class="btn btn-primary" id="exploit-btn" onclick="startExploitProcess()">
+                Start Jailbreak Exploit
+            </button>
+
+            <div class="progress-container">
+                <div class="progress-bar" id="progress-bar"></div>
+            </div>
+
+            <div class="console-box" id="console-box">
+                <div class="console-line">[i] Nexus utility initialized successfully.</div>
+                <div class="console-line">[i] Awaiting user authorization sequence...</div>
+            </div>
+
+            <div class="device-footer">Educational Simulation Environment</div>
+        </div>
+
+        <!-- PHASE 2: SPRINGBOARD / PACKAGE MANAGER VIEW -->
+        <div class="view hidden" id="springboard-view">
+            <div class="springboard-header">
+                <div class="springboard-title">Sileo Simulator</div>
+                <div style="font-size: 11px; color: var(--accent-emerald); font-weight: 700;">● Jailbroken</div>
+            </div>
+
+            <div class="pm-tabs">
+                <div class="pm-tab active" onclick="switchTab('featured', this)">Featured</div>
+                <div class="pm-tab" onclick="switchTab('sources', this)">Sources</div>
+                <div class="pm-tab" onclick="switchTab('terminal', this)">Terminal</div>
+            </div>
+
+            <!-- Tab 1: Featured Tweaks -->
+            <div class="tab-content active" id="tab-featured">
+                <div class="tweak-card">
+                    <div class="tweak-info">
+                        <h4>SnowBoard</h4>
+                        <p>Universal theming engine for springboard.</p>
+                    </div>
+                    <button class="tweak-btn" onclick="toggleInstall(this)">Get</button>
+                </div>
+                <div class="tweak-card">
+                    <div class="tweak-info">
+                        <h4>Cylinder Reborn</h4>
+                        <p>Smooth page turn animations for icons.</p>
+                    </div>
+                    <button class="tweak-btn" onclick="toggleInstall(this)">Get</button>
+                </div>
+                <div class="tweak-card">
+                    <div class="tweak-info">
+                        <h4>Xen HTML</h4>
+                        <p>Advanced homescreen widget platform.</p>
+                    </div>
+                    <button class="tweak-btn" onclick="toggleInstall(this)">Get</button>
+                </div>
+            </div>
+
+            <!-- Tab 2: Sources -->
+            <div class="tab-content" id="tab-sources">
+                <div class="tweak-card">
+                    <div class="tweak-info">
+                        <h4>Havoc Repository</h4>
+                        <p>https://apt.havoc.app/</p>
+                    </div>
+                    <span style="font-size: 11px; color: var(--accent-cyan);">Active</span>
+                </div>
+                <div class="tweak-card">
+                    <div class="tweak-info">
+                        <h4>Chariz Repo</h4>
+                        <p>https://repo.chariz.com/</p>
+                    </div>
+                    <span style="font-size: 11px; color: var(--accent-cyan);">Active</span>
+                </div>
+                <div class="tweak-card">
+                    <div class="tweak-info">
+                        <h4>BigBoss Main</h4>
+                        <p>http://apt.thebigboss.org/</p>
+                    </div>
+                    <span style="font-size: 11px; color: var(--accent-cyan);">Active</span>
+                </div>
+            </div>
+
+            <!-- Tab 3: Interactive Terminal App -->
+            <div class="tab-content" id="tab-terminal">
+                <div class="embedded-terminal">
+                    <div class="terminal-output" id="term-output">
+                        <div>Nexus Mobile Shell [Version 1.0.4]</div>
+                        <div>Type 'help' to review accessible commands.</div>
+                    </div>
+                    <div class="terminal-input-row">
+                        <span>root#</span>
+                        <input type="text" class="terminal-input" id="term-input" onkeydown="handleTerminalCommand(event)" placeholder="Enter command...">
+                    </div>
+                </div>
+            </div>
+
+            <div class="device-footer">Rootless Environment Active</div>
+        </div>
+    </div>
+
+    <script>
+        const exploitBtn = document.getElementById('exploit-btn');
+        const progressBar = document.getElementById('progress-bar');
+        const consoleBox = document.getElementById('console-box');
+        const statusText = document.getElementById('status-text');
+        const notch = document.getElementById('notch');
+        const respringOverlay = document.getElementById('respring-overlay');
+        
+        const toolView = document.getElementById('tool-view');
+        const springboardView = document.getElementById('springboard-view');
+
+        const logs = [
+            { text: "[i] Initializing hardware exploit chain...", type: "" },
+            { text: "[i] Spraying kernel heap to establish memory alignment...", type: "" },
+            { text: "[+] Bypassing Pointer Authentication (PAC) verification...", type: "success" },
+            { text: "[+] Successfully hijacked kernel task port pointer.", type: "success" },
+            { text: "[!] Patching TrustCache and disabling kernel code-signing...", type: "warn" },
+            { text: "[i] Mounting root filesystem safely via rootless protocol...", type: "" },
+            { text: "[+] Injecting bootstrap binaries into launchd process...", type: "success" },
+            { text: "[✓] Cleanup complete. System successfully jailbroken!", type: "success" }
+        ];
+
+        function logMessage(text, type = "") {
+            const div = document.createElement('div');
+            div.className = `console-line ${type}`;
+            div.textContent = text;
+            consoleBox.appendChild(div);
+            consoleBox.scrollTop = consoleBox.scrollHeight;
+        }
+
+        function startExploitProcess() {
+            exploitBtn.disabled = true;
+            notch.classList.add('active');
+            let currentStep = 0;
+            
+            const interval = setInterval(() => {
+                if (currentStep < logs.length) {
+                    logMessage(logs[currentStep].text, logs[currentStep].type);
+                    let progressPct = ((currentStep + 1) / logs.length) * 100;
+                    progressBar.style.width = `${progressPct}%`;
+                    currentStep++;
+                } else {
+                    clearInterval(interval);
+                    statusText.textContent = "Jailbroken (Rootless)";
+                    statusText.className = "bio-value status-safe";
+                    
+                    // Trigger cinematic respring sequence after brief pause
+                    setTimeout(() => {
+                        triggerRespring();
+                    }, 1200);
+                }
+            }, 800);
+        }
+
+        function triggerRespring() {
+            respringOverlay.classList.add('active');
+            notch.classList.remove('active');
+            
+            setTimeout(() => {
+                respringOverlay.classList.remove('active');
+                toolView.classList.add('hidden');
+                springboardView.classList.remove('hidden');
+            }, 2000);
+        }
+
+        function switchTab(tabName, element) {
+            document.querySelectorAll('.pm-tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            
+            element.classList.add('active');
+            document.getElementById(`tab-${tabName}`).classList.add('active');
+        }
+
+        function toggleInstall(btn) {
+            if(btn.textContent === 'Get') {
+                btn.textContent = 'Installing...';
+                setTimeout(() => {
+                    btn.textContent = 'Installed';
+                    btn.classList.add('installed');
+                }, 1000);
+            } else if(btn.textContent === 'Installed') {
+                btn.textContent = 'Get';
+                btn.classList.remove('installed');
+            }
+        }
+
+        function handleTerminalCommand(e) {
+            if (e.key === 'Enter') {
+                const inputField = e.target;
+                const cmd = inputField.value.trim();
+                const outputContainer = document.getElementById('term-output');
+                
+                if (cmd === '') return;
+
+                const userEcho = document.createElement('div');
+                userEcho.textContent = `root# ${cmd}`;
+                outputContainer.appendChild(userEcho);
+
+                const responseDiv = document.createElement('div');
+                responseDiv.style.color = "#d1d5db";
+
+                switch(cmd.toLowerCase()) {
+                    case 'help':
+                        responseDiv.textContent = "Available commands: neofetch, uicache, list, clear, reboot";
+                        break;
+                    case 'neofetch':
+                        responseDiv.innerHTML = "NexusOS v2.0<br>Device: iPhone 15 Pro Max<br>Uptime: 14 mins<br>Packages: 38 installed";
+                        break;
+                    case 'uicache':
+                        responseDiv.textContent = "Successfully refreshed SpringBoard application cache.";
+                        break;
+                    case 'list':
+                        responseDiv.textContent = "Active tweaks: SnowBoard, Cylinder Reborn, Xen HTML";
+                        break;
+                    case 'clear':
+                        outputContainer.innerHTML = "";
+                        inputField.value = '';
+                        return;
+                    case 'reboot':
+                        responseDiv.textContent = "Simulating user reboot sequence... jailbreak state cleared.";
+                        setTimeout(() => {
+                            location.reload();
+                        }, 1500);
+                        break;
+                    default:
+                        responseDiv.textContent = `zsh: command not found: ${cmd}`;
+                }
+
+                outputContainer.appendChild(responseDiv);
+                inputField.value = '';
+                outputContainer.scrollTop = outputContainer.scrollHeight;
+            }
+        }
+    </script>
+</body>
+</html>
