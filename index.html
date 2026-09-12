@@ -6,15 +6,9 @@
 <meta name="theme-color" content="#04040a">
 <title>Dopamine X — Next-Gen iOS Simulation Suite</title>
 <style>
-/* ============================================================
-   CORE TOKENS
-   ============================================================ */
 :root{
   --bg:#04040a;
-  --panel:rgba(20,20,32,.55);
-  --panel-2:rgba(255,255,255,.045);
   --stroke:rgba(255,255,255,.085);
-  --stroke-2:rgba(255,255,255,.16);
   --txt:#eef1f8;
   --mut:#8b93a7;
   --mut-2:#5c6377;
@@ -25,513 +19,215 @@
   --warn:#fbbf24;
   --err:#f87171;
   --radius:20px;
-  --status-h:calc(46px + env(safe-area-inset-top,0px));
+  --status-h:calc(30px + env(safe-area-inset-top,0px));
   --safe-b:env(safe-area-inset-bottom,0px);
 }
-
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 html,body{height:100%}
 body{
-  background:#000;
-  color:var(--txt);
+  background:#000;color:var(--txt);
   font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","SF Pro Text","Segoe UI",Roboto,Helvetica,Arial,sans-serif;
   -webkit-font-smoothing:antialiased;
   display:flex;align-items:center;justify-content:center;
-  height:100dvh;overflow:hidden;
-  user-select:none;
+  height:100dvh;overflow:hidden;user-select:none;
 }
 button{font-family:inherit;color:inherit;border:none;background:none;cursor:pointer}
 input{font-family:inherit}
 ::-webkit-scrollbar{width:0;height:0}
 
-/* ============================================================
-   DEVICE SHELL
-   ============================================================ */
-.device{
-  position:relative;
-  width:min(430px,100vw);
-  height:min(100dvh,100dvh);
-  background:var(--bg);
-  overflow:hidden;
-  isolation:isolate;
-}
+.device{position:relative;width:min(430px,100vw);height:min(100dvh,100dvh);background:var(--bg);overflow:hidden;isolation:isolate}
 @media (min-width:520px) and (min-height:720px){
-  .device{
-    --status-h:58px;
-    height:min(900px,94dvh);
-    border-radius:56px;
-    border:12px solid #13131c;
-    box-shadow:
-      0 0 0 2px #2b2b3a,
-      0 50px 100px rgba(0,0,0,.85),
-      0 0 140px rgba(34,211,238,.07),
-      inset 0 0 0 1px rgba(255,255,255,.06);
-  }
+  .device{--status-h:42px;height:min(900px,94dvh);border-radius:56px;border:12px solid #13131c;
+    box-shadow:0 0 0 2px #2b2b3a,0 50px 100px rgba(0,0,0,.85),0 0 140px rgba(34,211,238,.07),inset 0 0 0 1px rgba(255,255,255,.06);}
   .island{display:block !important;}
 }
+.island{display:none;position:absolute;top:12px;left:50%;transform:translateX(-50%);width:112px;height:32px;background:#000;border-radius:20px;z-index:90;box-shadow:inset 0 0 0 1px rgba(255,255,255,.05);}
+.island::after{content:"";position:absolute;right:12px;top:50%;transform:translateY(-50%);width:9px;height:9px;border-radius:50%;background:radial-gradient(circle at 35% 35%,#1c2b3a,#050810);box-shadow:inset 0 0 2px rgba(80,180,255,.5);}
 
-.island{
-  display:none;
-  position:absolute;top:12px;left:50%;transform:translateX(-50%);
-  width:112px;height:32px;background:#000;border-radius:20px;z-index:90;
-  box-shadow:inset 0 0 0 1px rgba(255,255,255,.05);
-}
-.island::after{
-  content:"";position:absolute;right:12px;top:50%;transform:translateY(-50%);
-  width:9px;height:9px;border-radius:50%;
-  background:radial-gradient(circle at 35% 35%,#1c2b3a,#050810);
-  box-shadow:inset 0 0 2px rgba(80,180,255,.5);
-}
-
-/* ============================================================
-   AURORA BACKDROP
-   ============================================================ */
 .aurora{position:absolute;inset:0;overflow:hidden;pointer-events:none;z-index:0}
-.aurora i{
-  position:absolute;display:block;border-radius:50%;
-  filter:blur(72px);opacity:.42;
-  animation:drift 22s ease-in-out infinite;
-}
-.aurora i:nth-child(1){width:300px;height:300px;background:#0ea5e9;top:-90px;left:-90px;animation-delay:0s}
+.aurora i{position:absolute;display:block;border-radius:50%;filter:blur(72px);opacity:.42;animation:drift 22s ease-in-out infinite;}
+.aurora i:nth-child(1){width:300px;height:300px;background:#0ea5e9;top:-90px;left:-90px}
 .aurora i:nth-child(2){width:280px;height:280px;background:#a855f7;top:30%;right:-110px;animation-delay:-7s}
 .aurora i:nth-child(3){width:260px;height:260px;background:#ec4899;bottom:-90px;left:10%;animation-delay:-14s}
-@keyframes drift{
-  0%,100%{transform:translate3d(0,0,0) scale(1)}
-  33%{transform:translate3d(40px,-30px,0) scale(1.15)}
-  66%{transform:translate3d(-30px,25px,0) scale(.92)}
-}
+@keyframes drift{0%,100%{transform:translate3d(0,0,0) scale(1)}33%{transform:translate3d(40px,-30px,0) scale(1.15)}66%{transform:translate3d(-30px,25px,0) scale(.92)}}
 
-/* ============================================================
-   STATUS BAR
-   ============================================================ */
-.statusbar{
-  position:absolute;top:0;left:0;right:0;height:var(--status-h);
-  display:flex;align-items:center;justify-content:space-between;
-  padding:0 26px;font-size:13px;font-weight:600;
-  letter-spacing:.2px;z-index:80;pointer-events:none;
-  text-shadow:0 1px 3px rgba(0,0,0,.5);
-}
-.sb-right{display:flex;align-items:center;gap:6px}
-.bars{display:flex;align-items:flex-end;gap:2px;height:11px}
-.bars span{width:3px;background:currentColor;border-radius:1px;opacity:.95}
-.bars span:nth-child(1){height:4px}
-.bars span:nth-child(2){height:6px}
-.bars span:nth-child(3){height:8px}
-.bars span:nth-child(4){height:11px}
-.batt{
-  width:24px;height:12px;border:1.4px solid rgba(255,255,255,.5);
-  border-radius:3.5px;position:relative;padding:1.5px;
-}
-.batt::after{
-  content:"";position:absolute;right:-4px;top:50%;transform:translateY(-50%);
-  width:2px;height:5px;background:rgba(255,255,255,.45);border-radius:0 2px 2px 0;
-}
-.batt i{display:block;height:100%;border-radius:1.5px;background:var(--txt);transition:width .4s ease}
-.batt.low i{background:var(--err)}
-
-/* ============================================================
-   VIEW SYSTEM
-   ============================================================ */
-.view{
-  position:absolute;inset:0;
-  display:flex;flex-direction:column;
-  padding-top:var(--status-h);
+.view{position:absolute;inset:0;display:flex;flex-direction:column;padding-top:var(--status-h);
   opacity:0;visibility:hidden;transform:scale(.965);
-  transition:opacity .34s ease,transform .42s cubic-bezier(.16,1,.3,1),visibility .34s;
-  z-index:10;
-}
+  transition:opacity .34s ease,transform .42s cubic-bezier(.16,1,.3,1),visibility .34s;z-index:10;}
 .view.active{opacity:1;visibility:visible;transform:scale(1);z-index:20}
-.scroll{
-  flex:1;overflow-y:auto;overflow-x:hidden;
-  padding:6px 18px calc(28px + var(--safe-b));
-  -webkit-overflow-scrolling:touch;
-}
+.scroll{flex:1;overflow-y:auto;overflow-x:hidden;padding:6px 18px calc(28px + var(--safe-b));-webkit-overflow-scrolling:touch;}
 
-/* ============================================================
-   BOOT SPLASH
-   ============================================================ */
-#view-boot{
-  align-items:center;justify-content:center;
-  background:radial-gradient(circle at 50% 42%,#101024 0%,#04040a 70%);
-}
+/* Boot */
+#view-boot{align-items:center;justify-content:center;background:radial-gradient(circle at 50% 42%,#101024 0%,#04040a 70%);}
 .boot-wrap{display:flex;flex-direction:column;align-items:center;gap:22px;margin-top:-40px}
-.boot-logo{
-  width:104px;height:104px;border-radius:30px;position:relative;
+.boot-logo{width:104px;height:104px;border-radius:30px;position:relative;
   background:linear-gradient(150deg,var(--acc),var(--acc2) 55%,var(--acc3));
-  display:flex;align-items:center;justify-content:center;
-  font-size:46px;font-weight:800;color:#04040a;
+  display:flex;align-items:center;justify-content:center;font-size:46px;font-weight:800;color:#04040a;
   box-shadow:0 0 60px rgba(34,211,238,.45),0 20px 50px rgba(0,0,0,.6);
-  animation:bootPop .9s cubic-bezier(.16,1.3,.3,1) both;
-}
-.boot-logo::before{
-  content:"";position:absolute;inset:-14px;border-radius:40px;
-  border:1.5px solid rgba(34,211,238,.35);
-  animation:ring 2s ease-out infinite;
-}
-.boot-logo::after{
-  content:"";position:absolute;inset:-14px;border-radius:40px;
-  border:1.5px solid rgba(168,85,247,.3);
-  animation:ring 2s ease-out infinite .7s;
-}
+  animation:bootPop .9s cubic-bezier(.16,1.3,.3,1) both;}
+.boot-logo::before{content:"";position:absolute;inset:-14px;border-radius:40px;border:1.5px solid rgba(34,211,238,.35);animation:ring 2s ease-out infinite;}
+.boot-logo::after{content:"";position:absolute;inset:-14px;border-radius:40px;border:1.5px solid rgba(168,85,247,.3);animation:ring 2s ease-out infinite .7s;}
 @keyframes ring{0%{transform:scale(.85);opacity:.9}100%{transform:scale(1.35);opacity:0}}
 @keyframes bootPop{from{opacity:0;transform:scale(.6) rotate(-12deg)}to{opacity:1;transform:scale(1) rotate(0)}}
-.boot-name{
-  font-size:26px;font-weight:800;letter-spacing:-.6px;
-  background:linear-gradient(100deg,var(--acc),var(--acc2),var(--acc3));
-  -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;
-}
+.boot-name{font-size:26px;font-weight:800;letter-spacing:-.6px;background:linear-gradient(100deg,var(--acc),var(--acc2),var(--acc3));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;}
 .boot-sub{font-size:11px;color:var(--mut);letter-spacing:2px;text-transform:uppercase;font-weight:600}
 .boot-bar{width:150px;height:3px;border-radius:3px;background:rgba(255,255,255,.08);overflow:hidden}
 .boot-bar i{display:block;height:100%;width:0;border-radius:3px;background:linear-gradient(90deg,var(--acc),var(--acc3));animation:bootFill 1.7s cubic-bezier(.5,0,.2,1) forwards}
 @keyframes bootFill{to{width:100%}}
 
-/* ============================================================
-   GENERIC COMPONENTS
-   ============================================================ */
-.card{
-  background:linear-gradient(160deg,rgba(255,255,255,.055),rgba(255,255,255,.018));
-  border:1px solid var(--stroke);
-  border-radius:var(--radius);
-  padding:16px;
-  margin-bottom:14px;
-  backdrop-filter:blur(22px) saturate(150%);
-  -webkit-backdrop-filter:blur(22px) saturate(150%);
-  box-shadow:0 10px 30px rgba(0,0,0,.28);
-  position:relative;overflow:hidden;
-}
-.card-label{
-  font-size:10px;font-weight:800;letter-spacing:1.4px;text-transform:uppercase;
-  color:var(--mut-2);margin-bottom:12px;
-}
+.card{background:linear-gradient(160deg,rgba(255,255,255,.055),rgba(255,255,255,.018));border:1px solid var(--stroke);border-radius:var(--radius);padding:16px;margin-bottom:14px;
+  backdrop-filter:blur(22px) saturate(150%);-webkit-backdrop-filter:blur(22px) saturate(150%);
+  box-shadow:0 10px 30px rgba(0,0,0,.28);position:relative;overflow:hidden;}
+.card-label{font-size:10px;font-weight:800;letter-spacing:1.4px;text-transform:uppercase;color:var(--mut-2);margin-bottom:12px}
 
 .hero{text-align:center;padding:14px 0 18px}
-.hero-badge{
-  display:inline-block;font-size:9px;font-weight:800;letter-spacing:1.8px;
-  padding:5px 12px;border-radius:100px;margin-bottom:14px;
-  color:#fca5a5;border:1px solid rgba(248,113,113,.35);
-  background:linear-gradient(90deg,rgba(248,113,113,.14),rgba(251,191,36,.12));
-  animation:pulseBadge 3s ease-in-out infinite;
-}
+.hero-badge{display:inline-block;font-size:9px;font-weight:800;letter-spacing:1.8px;padding:5px 12px;border-radius:100px;margin-bottom:14px;
+  color:#fca5a5;border:1px solid rgba(248,113,113,.35);background:linear-gradient(90deg,rgba(248,113,113,.14),rgba(251,191,36,.12));animation:pulseBadge 3s ease-in-out infinite;}
 @keyframes pulseBadge{0%,100%{opacity:.75}50%{opacity:1}}
-.hero-title{
-  font-size:38px;font-weight:800;letter-spacing:-1.6px;line-height:1;
-  background:linear-gradient(100deg,var(--acc),var(--acc2) 50%,var(--acc3));
-  background-size:200% auto;
-  -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;
-  animation:shimmer 5s linear infinite;
-}
+.hero-title{font-size:38px;font-weight:800;letter-spacing:-1.6px;line-height:1;
+  background:linear-gradient(100deg,var(--acc),var(--acc2) 50%,var(--acc3));background-size:200% auto;
+  -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;animation:shimmer 5s linear infinite;}
 @keyframes shimmer{to{background-position:200% center}}
 .hero-sub{font-size:10.5px;color:var(--mut);letter-spacing:1.6px;text-transform:uppercase;font-weight:600;margin-top:8px}
 
-/* Key/Value rows */
 .kv{display:flex;justify-content:space-between;align-items:center;padding:9px 0;font-size:13px;gap:10px}
 .kv + .kv{border-top:1px solid rgba(255,255,255,.045)}
 .kv-k{color:var(--mut);flex-shrink:0}
-.kv-v{font-weight:600;text-align:right;font-variant-numeric:tabular-nums;
-  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:60%}
+.kv-v{font-weight:600;text-align:right;font-variant-numeric:tabular-nums;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:60%}
 .c-acc{color:var(--acc)}.c-ok{color:var(--ok)}.c-warn{color:var(--warn)}.c-err{color:var(--err)}
 
-/* Scanning shimmer on the device card */
-.scanline{
-  position:absolute;left:0;right:0;height:70px;pointer-events:none;
-  background:linear-gradient(180deg,transparent,rgba(34,211,238,.14),transparent);
-  animation:scan 3.4s linear infinite;
-}
+.scanline{position:absolute;left:0;right:0;height:70px;pointer-events:none;
+  background:linear-gradient(180deg,transparent,rgba(34,211,238,.14),transparent);animation:scan 3.4s linear infinite;}
 @keyframes scan{0%{top:-70px}100%{top:100%}}
 
-/* Chips */
 .chips{display:flex;flex-wrap:wrap;gap:7px}
-.chip{
-  font-size:11px;font-weight:700;padding:7px 12px;border-radius:100px;
-  background:var(--panel-2);border:1px solid var(--stroke);color:var(--mut);
-  transition:.22s;
-}
-.chip.on{
-  color:var(--acc);border-color:color-mix(in srgb,var(--acc) 45%,transparent);
-  background:color-mix(in srgb,var(--acc) 12%,transparent);
-  box-shadow:0 0 16px color-mix(in srgb,var(--acc) 25%,transparent);
-}
+.chip{font-size:11px;font-weight:700;padding:7px 12px;border-radius:100px;background:rgba(255,255,255,.045);border:1px solid var(--stroke);color:var(--mut);transition:.22s;}
+.chip.on{color:var(--acc);border-color:color-mix(in srgb,var(--acc) 45%,transparent);background:color-mix(in srgb,var(--acc) 12%,transparent);box-shadow:0 0 16px color-mix(in srgb,var(--acc) 25%,transparent);}
 
-/* Toggle switch */
-.row{
-  display:flex;align-items:center;justify-content:space-between;gap:14px;
-  padding:12px 0;
-}
+.row{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:12px 0}
 .row + .row{border-top:1px solid rgba(255,255,255,.045)}
 .row-t{font-size:13.5px;font-weight:600}
 .row-d{font-size:11px;color:var(--mut);margin-top:2px;line-height:1.35}
-.sw{
-  width:47px;height:28px;border-radius:100px;background:rgba(255,255,255,.11);
-  position:relative;flex-shrink:0;transition:background .28s cubic-bezier(.4,0,.2,1);
-}
-.sw::after{
-  content:"";position:absolute;top:2.5px;left:2.5px;width:23px;height:23px;border-radius:50%;
-  background:#fff;box-shadow:0 2px 6px rgba(0,0,0,.45);
-  transition:transform .28s cubic-bezier(.4,0,.2,1);
-}
+.sw{width:47px;height:28px;border-radius:100px;background:rgba(255,255,255,.11);position:relative;flex-shrink:0;transition:background .28s cubic-bezier(.4,0,.2,1);}
+.sw::after{content:"";position:absolute;top:2.5px;left:2.5px;width:23px;height:23px;border-radius:50%;background:#fff;box-shadow:0 2px 6px rgba(0,0,0,.45);transition:transform .28s cubic-bezier(.4,0,.2,1);}
 .sw.on{background:var(--acc)}
 .sw.on::after{transform:translateX(19px)}
 
-/* ============================================================
-   EXPLOIT BUTTON
-   ============================================================ */
-.jb-btn{
-  position:relative;width:100%;height:60px;border-radius:18px;
-  overflow:hidden;margin:4px 0 14px;
-  background:linear-gradient(135deg,var(--acc),var(--acc2));
-  color:#04040a;font-size:16px;font-weight:800;letter-spacing:.3px;
-  box-shadow:0 12px 34px color-mix(in srgb,var(--acc) 32%,transparent),
-             inset 0 1px 0 rgba(255,255,255,.4);
-  transition:transform .16s ease,box-shadow .3s ease,filter .3s;
-}
+.jb-btn{position:relative;width:100%;height:60px;border-radius:18px;overflow:hidden;margin:4px 0 14px;
+  background:linear-gradient(135deg,var(--acc),var(--acc2));color:#04040a;font-size:16px;font-weight:800;letter-spacing:.3px;
+  box-shadow:0 12px 34px color-mix(in srgb,var(--acc) 32%,transparent),inset 0 1px 0 rgba(255,255,255,.4);
+  transition:transform .16s ease,box-shadow .3s ease,filter .3s;}
 .jb-btn:active{transform:scale(.975)}
 .jb-btn:disabled{cursor:default}
 .jb-btn.busy{filter:saturate(.7) brightness(.85)}
-.jb-fill{
-  position:absolute;inset:0;width:0%;
-  background:linear-gradient(90deg,rgba(255,255,255,.55),rgba(255,255,255,.15));
-  transition:width .3s cubic-bezier(.4,0,.2,1);
-}
+.jb-fill{position:absolute;inset:0;width:0%;background:linear-gradient(90deg,rgba(255,255,255,.55),rgba(255,255,255,.15));transition:width .3s cubic-bezier(.4,0,.2,1);}
 .jb-label{position:relative;z-index:2;display:flex;align-items:center;justify-content:center;gap:9px}
-.spinner{
-  width:15px;height:15px;border-radius:50%;
-  border:2.2px solid rgba(0,0,0,.22);border-top-color:#04040a;
-  animation:spin .7s linear infinite;display:none;
-}
+.spinner{width:15px;height:15px;border-radius:50%;border:2.2px solid rgba(0,0,0,.22);border-top-color:#04040a;animation:spin .7s linear infinite;display:none;}
 .jb-btn.busy .spinner{display:block}
 @keyframes spin{to{transform:rotate(360deg)}}
 
-/* ============================================================
-   STAGE + PROGRESS
-   ============================================================ */
 .stage-row{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px;font-size:11px}
 .stage-name{font-weight:700;color:var(--acc);letter-spacing:.3px}
 .stage-pct{font-variant-numeric:tabular-nums;color:var(--mut);font-weight:700}
 .track{height:5px;border-radius:5px;background:rgba(255,255,255,.07);overflow:hidden;margin-bottom:16px}
-.track i{
-  display:block;height:100%;width:0;border-radius:5px;
-  background:linear-gradient(90deg,var(--acc),var(--acc2),var(--acc3));
-  background-size:200% auto;
-  transition:width .35s cubic-bezier(.4,0,.2,1);
-  box-shadow:0 0 14px color-mix(in srgb,var(--acc) 60%,transparent);
-  animation:shimmer 2s linear infinite;
-}
+.track i{display:block;height:100%;width:0;border-radius:5px;
+  background:linear-gradient(90deg,var(--acc),var(--acc2),var(--acc3));background-size:200% auto;
+  transition:width .35s cubic-bezier(.4,0,.2,1);box-shadow:0 0 14px color-mix(in srgb,var(--acc) 60%,transparent);animation:shimmer 2s linear infinite;}
 
-/* ============================================================
-   TERMINAL / LOG
-   ============================================================ */
-.term{
-  background:#000;border:1px solid rgba(255,255,255,.11);border-radius:15px;
-  padding:12px 13px;height:186px;overflow-y:auto;
-  font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono",monospace;
-  font-size:10.5px;line-height:1.55;
-  display:flex;flex-direction:column;gap:1px;
-  scroll-behavior:smooth;
-}
+.term{background:#000;border:1px solid rgba(255,255,255,.11);border-radius:15px;padding:12px 13px;height:186px;overflow-y:auto;
+  font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono",monospace;font-size:10.5px;line-height:1.55;
+  display:flex;flex-direction:column;gap:1px;scroll-behavior:smooth;}
 .tl{word-break:break-word;color:#7dd3fc;animation:fadeIn .25s ease both}
-.tl.ok{color:var(--ok)}
-.tl.warn{color:var(--warn)}
-.tl.err{color:var(--err)}
-.tl.dim{color:var(--mut-2)}
-.tl.hi{color:#fff}
+.tl.ok{color:var(--ok)}.tl.warn{color:var(--warn)}.tl.err{color:var(--err)}.tl.dim{color:var(--mut-2)}.tl.hi{color:#fff}
 @keyframes fadeIn{from{opacity:0;transform:translateY(3px)}to{opacity:1;transform:none}}
 
-/* ============================================================
-   HOME SCREEN (SPRINGBOARD)
-   ============================================================ */
 #view-home{padding-top:0}
-.wallpaper{
-  position:absolute;inset:0;z-index:-1;
-  background:
-    radial-gradient(circle at 22% 12%,rgba(168,85,247,.5),transparent 46%),
-    radial-gradient(circle at 82% 26%,rgba(34,211,238,.42),transparent 48%),
-    radial-gradient(circle at 50% 92%,rgba(236,72,153,.4),transparent 52%),
-    linear-gradient(170deg,#0a0a18,#04040a 70%);
-  filter:saturate(130%);
-}
-.home-body{
-  flex:1;display:flex;flex-direction:column;
-  padding:calc(var(--status-h) + 24px) 22px calc(14px + var(--safe-b));
-  overflow-y:auto;
-}
-.home-status{
-  text-align:center;margin-bottom:30px;
-  font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;
-  color:var(--ok);opacity:.9;
-  display:flex;align-items:center;justify-content:center;gap:7px;
-}
-.dot-live{width:7px;height:7px;border-radius:50%;background:var(--ok);box-shadow:0 0 10px var(--ok);animation:livePulse 1.8s ease-in-out infinite}
+.wallpaper{position:absolute;inset:0;z-index:-1;
+  background:radial-gradient(circle at 22% 12%,rgba(168,85,247,.5),transparent 46%),
+             radial-gradient(circle at 82% 26%,rgba(34,211,238,.42),transparent 48%),
+             radial-gradient(circle at 50% 92%,rgba(236,72,153,.4),transparent 52%),
+             linear-gradient(170deg,#0a0a18,#04040a 70%);
+  filter:saturate(130%);}
+.home-body{flex:1;display:flex;flex-direction:column;padding:calc(var(--status-h) + 24px) 22px calc(14px + var(--safe-b));overflow-y:auto;}
+.home-status{text-align:center;margin-bottom:30px;font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;
+  color:var(--ok);opacity:.9;display:flex;align-items:center;justify-content:center;gap:7px;}
+.dot-live{width:7px;height:7px;border-radius:50%;background:var(--ok);box-shadow:0 0 10px var(--ok);animation:livePulse 1.8s ease-in-out infinite;}
 @keyframes livePulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(.8)}}
 
 .app-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:18px 8px}
-.app{
-  display:flex;flex-direction:column;align-items:center;gap:7px;
-  animation:iconIn .5s cubic-bezier(.16,1.2,.3,1) both;
-}
+.app{display:flex;flex-direction:column;align-items:center;gap:7px;animation:iconIn .5s cubic-bezier(.16,1.2,.3,1) both;}
 @keyframes iconIn{from{opacity:0;transform:translateY(14px) scale(.8)}to{opacity:1;transform:none}}
 .app:active .tile{transform:scale(.88)}
-.tile{
-  width:58px;height:58px;border-radius:15px;
-  display:flex;align-items:center;justify-content:center;
-  font-size:25px;font-weight:700;
+.tile{width:58px;height:58px;border-radius:15px;display:flex;align-items:center;justify-content:center;font-size:25px;font-weight:700;
   background:linear-gradient(150deg,var(--c1),var(--c2));
   box-shadow:0 8px 20px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.28);
-  transition:transform .16s cubic-bezier(.4,0,.2,1);
-  position:relative;overflow:hidden;color:#fff;
-}
-.tile::after{
-  content:"";position:absolute;inset:0;
-  background:linear-gradient(160deg,rgba(255,255,255,.3),transparent 55%);
-  pointer-events:none;
-}
-.app-name{font-size:10px;font-weight:500;color:rgba(255,255,255,.9);text-shadow:0 1px 3px rgba(0,0,0,.7);letter-spacing:.1px}
-.dock{
-  margin-top:auto;padding-top:24px;
-}
-.dock-inner{
-  background:rgba(255,255,255,.1);
-  border:1px solid rgba(255,255,255,.14);
-  backdrop-filter:blur(26px) saturate(160%);
-  -webkit-backdrop-filter:blur(26px) saturate(160%);
-  border-radius:26px;padding:12px 10px;
-  display:grid;grid-template-columns:repeat(4,1fr);gap:8px;
-}
+  transition:transform .16s cubic-bezier(.4,0,.2,1);position:relative;overflow:hidden;color:#fff;}
+.tile::after{content:"";position:absolute;inset:0;background:linear-gradient(160deg,rgba(255,255,255,.3),transparent 55%);pointer-events:none;}
+.app-name{font-size:10px;font-weight:500;color:rgba(255,255,255,.9);text-shadow:0 1px 3px rgba(0,0,0,.7);}
+.dock{margin-top:auto;padding-top:24px}
+.dock-inner{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.14);
+  backdrop-filter:blur(26px) saturate(160%);-webkit-backdrop-filter:blur(26px) saturate(160%);
+  border-radius:26px;padding:12px 10px;display:grid;grid-template-columns:repeat(4,1fr);gap:8px;}
 .dock .app-name{display:none}
-.home-indicator{
-  width:130px;height:5px;border-radius:5px;background:rgba(255,255,255,.42);
-  margin:14px auto 6px;flex-shrink:0;
-}
+.home-indicator{width:130px;height:5px;border-radius:5px;background:rgba(255,255,255,.42);margin:14px auto 6px;flex-shrink:0;}
 
-/* ============================================================
-   APP CHROME
-   ============================================================ */
-.app-bar{
-  display:flex;align-items:center;gap:10px;
-  padding:4px 16px 12px;flex-shrink:0;
-}
-.back-btn{
-  width:34px;height:34px;border-radius:50%;
-  background:rgba(255,255,255,.08);border:1px solid var(--stroke);
-  display:flex;align-items:center;justify-content:center;font-size:15px;
-  color:var(--mut);transition:.2s;flex-shrink:0;
-}
+.app-bar{display:flex;align-items:center;gap:10px;padding:4px 16px 12px;flex-shrink:0}
+.back-btn{width:34px;height:34px;border-radius:50%;background:rgba(255,255,255,.08);border:1px solid var(--stroke);
+  display:flex;align-items:center;justify-content:center;font-size:15px;color:var(--mut);transition:.2s;flex-shrink:0;}
 .back-btn:active{transform:scale(.9);background:rgba(255,255,255,.14)}
 .app-bar h2{font-size:19px;font-weight:800;letter-spacing:-.5px}
 .app-bar .spacer{flex:1}
 
-/* ============================================================
-   SILEO
-   ============================================================ */
 .sileo-head{padding:0 16px 10px;flex-shrink:0}
 .sileo-title{font-size:30px;font-weight:800;letter-spacing:-1.2px}
 .sileo-sub{font-size:10.5px;color:var(--ok);font-weight:700;margin-top:3px;display:flex;align-items:center;gap:6px}
-.search{
-  margin-top:12px;display:flex;align-items:center;gap:8px;
-  background:rgba(255,255,255,.06);border:1px solid var(--stroke);
-  border-radius:12px;padding:9px 12px;
-}
-.search input{
-  flex:1;background:none;border:none;outline:none;color:var(--txt);font-size:13px;
-}
+.search{margin-top:12px;display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.06);border:1px solid var(--stroke);border-radius:12px;padding:9px 12px;}
+.search input{flex:1;background:none;border:none;outline:none;color:var(--txt);font-size:13px}
 .search input::placeholder{color:var(--mut-2)}
-.tabs{
-  display:flex;gap:4px;padding:0 16px 12px;flex-shrink:0;
-}
-.tab{
-  flex:1;padding:8px 4px;border-radius:11px;font-size:11px;font-weight:700;
-  color:var(--mut);transition:.2s;text-align:center;
-}
+.tabs{display:flex;gap:4px;padding:0 16px 12px;flex-shrink:0}
+.tab{flex:1;padding:8px 4px;border-radius:11px;font-size:11px;font-weight:700;color:var(--mut);transition:.2s;text-align:center}
 .tab.on{background:rgba(255,255,255,.09);color:#fff;box-shadow:0 4px 14px rgba(0,0,0,.3)}
 .pane{display:none;flex-direction:column;gap:9px}
 .pane.on{display:flex}
-.pkg{
-  display:flex;align-items:center;gap:12px;
-  background:linear-gradient(160deg,rgba(255,255,255,.05),rgba(255,255,255,.015));
-  border:1px solid var(--stroke);border-radius:16px;padding:12px;
-  animation:fadeIn .3s ease both;
-}
-.pkg-ico{
-  width:42px;height:42px;border-radius:12px;flex-shrink:0;
-  display:flex;align-items:center;justify-content:center;font-size:20px;
-  background:linear-gradient(150deg,rgba(255,255,255,.13),rgba(255,255,255,.04));
-  border:1px solid var(--stroke);
-}
+.pkg{display:flex;align-items:center;gap:12px;background:linear-gradient(160deg,rgba(255,255,255,.05),rgba(255,255,255,.015));
+  border:1px solid var(--stroke);border-radius:16px;padding:12px;animation:fadeIn .3s ease both;}
+.pkg-ico{width:42px;height:42px;border-radius:12px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:20px;
+  background:linear-gradient(150deg,rgba(255,255,255,.13),rgba(255,255,255,.04));border:1px solid var(--stroke);}
 .pkg-info{flex:1;min-width:0}
 .pkg-name{font-size:13.5px;font-weight:700;display:flex;align-items:center;gap:6px}
 .pkg-ver{font-size:9px;color:var(--mut-2);font-weight:600;background:rgba(255,255,255,.06);padding:1px 6px;border-radius:5px}
 .pkg-desc{font-size:11px;color:var(--mut);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .pkg-meta{font-size:9.5px;color:var(--mut-2);margin-top:3px}
-.ibtn{
-  padding:7px 15px;border-radius:100px;font-size:11px;font-weight:800;
-  border:1px solid color-mix(in srgb,var(--acc) 35%,transparent);
-  background:color-mix(in srgb,var(--acc) 13%,transparent);
-  color:var(--acc);transition:.2s;flex-shrink:0;white-space:nowrap;
-}
+.ibtn{padding:7px 15px;border-radius:100px;font-size:11px;font-weight:800;border:1px solid color-mix(in srgb,var(--acc) 35%,transparent);
+  background:color-mix(in srgb,var(--acc) 13%,transparent);color:var(--acc);transition:.2s;flex-shrink:0;white-space:nowrap;}
 .ibtn:active{transform:scale(.93)}
 .ibtn.done{color:var(--ok);border-color:rgba(52,211,153,.35);background:rgba(52,211,153,.12)}
 .ibtn.busy{color:var(--warn);border-color:rgba(251,191,36,.35);background:rgba(251,191,36,.12);pointer-events:none}
 .ibtn.remove{color:var(--err);border-color:rgba(248,113,113,.3);background:rgba(248,113,113,.1)}
-.repo{
-  display:flex;align-items:center;justify-content:space-between;gap:10px;
-  background:rgba(255,255,255,.04);border:1px solid var(--stroke);
-  border-radius:14px;padding:13px;
-}
+.repo{display:flex;align-items:center;justify-content:space-between;gap:10px;background:rgba(255,255,255,.04);border:1px solid var(--stroke);border-radius:14px;padding:13px;}
 .repo h4{font-size:13px;font-weight:700}
 .repo p{font-size:10.5px;color:var(--mut-2);font-family:ui-monospace,monospace;margin-top:2px}
 .verified{font-size:9.5px;font-weight:800;color:var(--ok);letter-spacing:.5px}
 
-/* ============================================================
-   FULL TERMINAL APP
-   ============================================================ */
 #view-terminal{padding-top:var(--status-h)}
-.term-full{
-  flex:1;display:flex;flex-direction:column;background:#000;
-  font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;
-  font-size:11.5px;overflow:hidden;margin:0 10px 10px;border-radius:14px;
-  border:1px solid rgba(255,255,255,.1);
-}
+.term-full{flex:1;display:flex;flex-direction:column;background:#000;
+  font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;font-size:11.5px;overflow:hidden;
+  margin:0 10px 10px;border-radius:14px;border:1px solid rgba(255,255,255,.1);}
 .term-out{flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:2px;line-height:1.55}
-.term-in-row{
-  display:flex;align-items:center;gap:7px;padding:9px 12px;
-  border-top:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.02);
-}
+.term-in-row{display:flex;align-items:center;gap:7px;padding:9px 12px;border-top:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.02);}
 .term-in-row .ps1{color:var(--ok);font-weight:700;flex-shrink:0}
-.term-in-row input{
-  flex:1;background:none;border:none;outline:none;color:#fff;
-  font-family:inherit;font-size:11.5px;caret-color:var(--acc);
-}
-.o-cmd{color:#fff}
-.o-err{color:var(--err)}
-.o-ok{color:var(--ok)}
-.o-dim{color:var(--mut-2)}
-.o-acc{color:var(--acc)}
+.term-in-row input{flex:1;background:none;border:none;outline:none;color:#fff;font-family:inherit;font-size:11.5px;caret-color:var(--acc);}
+.o-cmd{color:#fff}.o-err{color:var(--err)}.o-ok{color:var(--ok)}.o-dim{color:var(--mut-2)}.o-acc{color:var(--acc)}
 
-/* ============================================================
-   FILES
-   ============================================================ */
-.file-row{
-  display:flex;align-items:center;gap:12px;padding:13px 14px;
-  background:rgba(255,255,255,.04);border:1px solid var(--stroke);
-  border-radius:14px;transition:.18s;
-}
+.file-row{display:flex;align-items:center;gap:12px;padding:13px 14px;background:rgba(255,255,255,.04);border:1px solid var(--stroke);border-radius:14px;transition:.18s;}
 .file-row:active{background:rgba(255,255,255,.09)}
 .file-ico{font-size:18px;width:26px;text-align:center}
 .file-name{font-size:13px;font-weight:600;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .file-chev{color:var(--mut-2);font-size:13px}
-.crumb{
-  font-family:ui-monospace,monospace;font-size:11px;color:var(--acc);
-  padding:8px 12px;background:rgba(255,255,255,.04);border-radius:10px;
-  margin-bottom:12px;border:1px solid var(--stroke);
-}
+.crumb{font-family:ui-monospace,monospace;font-size:11px;color:var(--acc);padding:8px 12px;background:rgba(255,255,255,.04);border-radius:10px;margin-bottom:12px;border:1px solid var(--stroke);}
 
-/* ============================================================
-   RESPIRING OVERLAY
-   ============================================================ */
-#respring{
-  position:absolute;inset:0;background:#000;z-index:200;
-  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:36px;
-  opacity:0;visibility:hidden;transition:opacity .45s ease,visibility .45s;
-}
+#respring{position:absolute;inset:0;background:#000;z-index:200;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:36px;
+  opacity:0;visibility:hidden;transition:opacity .45s ease,visibility .45s;}
 #respring.on{opacity:1;visibility:visible}
 #respring svg{width:62px;height:62px;fill:#fff;animation:applePulse 1.5s ease-in-out infinite}
 @keyframes applePulse{0%,100%{opacity:.45;transform:scale(.94)}50%{opacity:1;transform:scale(1.04)}}
@@ -539,57 +235,27 @@ input{font-family:inherit}
 .rs-bar i{display:block;height:100%;width:0;background:#fff;border-radius:4px;transition:width .3s linear}
 .rs-text{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--mut-2);font-weight:700}
 
-/* ============================================================
-   TOASTS
-   ============================================================ */
-#toasts{
-  position:absolute;left:0;right:0;bottom:calc(24px + var(--safe-b));
-  z-index:300;display:flex;flex-direction:column;align-items:center;gap:8px;
-  pointer-events:none;padding:0 20px;
-}
-.toast{
-  max-width:100%;
-  background:rgba(24,24,36,.9);
-  border:1px solid var(--stroke-2);
-  backdrop-filter:blur(24px) saturate(160%);
-  -webkit-backdrop-filter:blur(24px) saturate(160%);
-  padding:11px 18px;border-radius:100px;
-  font-size:12.5px;font-weight:600;
-  box-shadow:0 12px 34px rgba(0,0,0,.6);
-  opacity:0;transform:translateY(16px) scale(.94);
+#toasts{position:absolute;left:0;right:0;bottom:calc(24px + var(--safe-b));z-index:300;display:flex;flex-direction:column;align-items:center;gap:8px;pointer-events:none;padding:0 20px;}
+.toast{max-width:100%;background:rgba(24,24,36,.9);border:1px solid rgba(255,255,255,.16);
+  backdrop-filter:blur(24px) saturate(160%);-webkit-backdrop-filter:blur(24px) saturate(160%);
+  padding:11px 18px;border-radius:100px;font-size:12.5px;font-weight:600;
+  box-shadow:0 12px 34px rgba(0,0,0,.6);opacity:0;transform:translateY(16px) scale(.94);
   transition:opacity .3s ease,transform .38s cubic-bezier(.16,1.3,.3,1);
-  display:flex;align-items:center;gap:9px;white-space:nowrap;
-}
+  display:flex;align-items:center;gap:9px;white-space:nowrap;}
 .toast.show{opacity:1;transform:none}
 .toast::before{content:"●";font-size:9px;color:var(--acc)}
 .toast.ok::before{color:var(--ok)}
 .toast.err::before{color:var(--err)}
 .toast.warn::before{color:var(--warn)}
-
-/* Utility */
-.hidden{display:none !important}
-.fade-in{animation:fadeIn .35s ease both}
 </style>
 </head>
 <body>
 
 <div class="device" id="device">
   <div class="island"></div>
-
-  <!-- STATUS BAR -->
-  <div class="statusbar">
-    <span id="sbTime">9:41</span>
-    <span class="sb-right">
-      <span class="bars"><span></span><span></span><span></span><span></span></span>
-      <span class="batt" id="sbBattWrap"><i id="sbBatt" style="width:100%"></i></span>
-    </span>
-  </div>
-
   <div class="aurora"><i></i><i></i><i></i></div>
 
-  <!-- ==========================================================
-       BOOT SPLASH
-       ========================================================== -->
+  <!-- BOOT -->
   <section class="view active" id="view-boot">
     <div class="boot-wrap">
       <div class="boot-logo">D</div>
@@ -601,9 +267,7 @@ input{font-family:inherit}
     </div>
   </section>
 
-  <!-- ==========================================================
-       EXPLOIT DASHBOARD
-       ========================================================== -->
+  <!-- EXPLOIT -->
   <section class="view" id="view-exploit">
     <div class="scroll">
       <div class="hero">
@@ -612,7 +276,6 @@ input{font-family:inherit}
         <p class="hero-sub">Rootless Kernel Utility Suite · v3.1.0</p>
       </div>
 
-      <!-- Device fingerprint -->
       <div class="card">
         <div class="scanline"></div>
         <div class="card-label">Target Fingerprint</div>
@@ -625,7 +288,6 @@ input{font-family:inherit}
         <div class="kv"><span class="kv-k">Status</span><span class="kv-v c-err" id="d-status">Unjailbroken</span></div>
       </div>
 
-      <!-- Exploit chain picker -->
       <div class="card">
         <div class="card-label">Exploit Chain</div>
         <div class="chips" id="chainChips">
@@ -635,7 +297,6 @@ input{font-family:inherit}
         </div>
       </div>
 
-      <!-- Options -->
       <div class="card">
         <div class="card-label">Configuration</div>
         <div class="row">
@@ -656,7 +317,6 @@ input{font-family:inherit}
         </div>
       </div>
 
-      <!-- Action -->
       <button class="jb-btn" id="jbBtn">
         <span class="jb-fill" id="jbFill"></span>
         <span class="jb-label">
@@ -683,26 +343,18 @@ input{font-family:inherit}
     </div>
   </section>
 
-  <!-- ==========================================================
-       HOME SCREEN
-       ========================================================== -->
+  <!-- HOME -->
   <section class="view" id="view-home">
     <div class="wallpaper"></div>
     <div class="home-body">
       <div class="home-status"><span class="dot-live"></span> Rootless Jailbreak Active</div>
-
       <div class="app-grid" id="appGrid"></div>
-
-      <div class="dock">
-        <div class="dock-inner" id="dockGrid"></div>
-      </div>
+      <div class="dock"><div class="dock-inner" id="dockGrid"></div></div>
       <div class="home-indicator"></div>
     </div>
   </section>
 
-  <!-- ==========================================================
-       SILEO PACKAGE MANAGER
-       ========================================================== -->
+  <!-- SILEO -->
   <section class="view" id="view-sileo">
     <div class="app-bar">
       <button class="back-btn" data-home>‹</button>
@@ -728,9 +380,7 @@ input{font-family:inherit}
     </div>
   </section>
 
-  <!-- ==========================================================
-       TERMINAL APP
-       ========================================================== -->
+  <!-- TERMINAL -->
   <section class="view" id="view-terminal">
     <div class="app-bar">
       <button class="back-btn" data-home>‹</button>
@@ -747,9 +397,7 @@ input{font-family:inherit}
     </div>
   </section>
 
-  <!-- ==========================================================
-       SETTINGS
-       ========================================================== -->
+  <!-- SETTINGS -->
   <section class="view" id="view-settings">
     <div class="app-bar">
       <button class="back-btn" data-home>‹</button>
@@ -758,36 +406,16 @@ input{font-family:inherit}
     <div class="scroll">
       <div class="card">
         <div class="card-label">Tweak Injection</div>
-        <div class="row">
-          <div><div class="row-t">Enable Injection</div><div class="row-d">Hook into SpringBoard & apps</div></div>
-          <div class="sw" data-opt="inject"></div>
-        </div>
-        <div class="row">
-          <div><div class="row-t">Safe Mode</div><div class="row-d">Disable all tweaks at boot</div></div>
-          <div class="sw" data-opt="safemode"></div>
-        </div>
-        <div class="row">
-          <div><div class="row-t">Hide Jailbreak</div><div class="row-d">Bypass detection in banking apps</div></div>
-          <div class="sw" data-opt="hidejb"></div>
-        </div>
+        <div class="row"><div><div class="row-t">Enable Injection</div><div class="row-d">Hook into SpringBoard &amp; apps</div></div><div class="sw" data-opt="inject"></div></div>
+        <div class="row"><div><div class="row-t">Safe Mode</div><div class="row-d">Disable all tweaks at boot</div></div><div class="sw" data-opt="safemode"></div></div>
+        <div class="row"><div><div class="row-t">Hide Jailbreak</div><div class="row-d">Bypass detection in banking apps</div></div><div class="sw" data-opt="hidejb"></div></div>
       </div>
-
       <div class="card">
         <div class="card-label">System</div>
-        <div class="row">
-          <div><div class="row-t">SSH over Wi-Fi</div><div class="row-d">dropbear · port 22</div></div>
-          <div class="sw" data-opt="ssh"></div>
-        </div>
-        <div class="row">
-          <div><div class="row-t">Auto Respring</div><div class="row-d">After package installation</div></div>
-          <div class="sw" data-opt="autorespring"></div>
-        </div>
-        <div class="row">
-          <div><div class="row-t">Interface Sounds</div><div class="row-d">Subtle audio feedback</div></div>
-          <div class="sw" data-opt="sound"></div>
-        </div>
+        <div class="row"><div><div class="row-t">SSH over Wi-Fi</div><div class="row-d">dropbear · port 22</div></div><div class="sw" data-opt="ssh"></div></div>
+        <div class="row"><div><div class="row-t">Auto Respring</div><div class="row-d">After package installation</div></div><div class="sw" data-opt="autorespring"></div></div>
+        <div class="row"><div><div class="row-t">Interface Sounds</div><div class="row-d">Subtle audio feedback</div></div><div class="sw on" data-opt="sound"></div></div>
       </div>
-
       <div class="card">
         <div class="card-label">Accent Colour</div>
         <div class="chips" id="accentChips">
@@ -798,20 +426,17 @@ input{font-family:inherit}
           <button class="chip" data-accent="#fbbf24" style="color:#fbbf24">Amber</button>
         </div>
       </div>
-
       <div class="card" style="border-color:rgba(248,113,113,.25)">
         <div class="card-label" style="color:var(--err)">Danger Zone</div>
         <div class="row">
-          <div><div class="row-t">Restore RootFS</div><div class="row-d">Remove bootstrap & revert to stock</div></div>
+          <div><div class="row-t">Restore RootFS</div><div class="row-d">Remove bootstrap &amp; revert to stock</div></div>
           <button class="ibtn remove" id="restoreBtn">Restore</button>
         </div>
       </div>
     </div>
   </section>
 
-  <!-- ==========================================================
-       FILES
-       ========================================================== -->
+  <!-- FILES -->
   <section class="view" id="view-files">
     <div class="app-bar">
       <button class="back-btn" id="filesUp">‹</button>
@@ -823,9 +448,7 @@ input{font-family:inherit}
     </div>
   </section>
 
-  <!-- ==========================================================
-       ABOUT
-       ========================================================== -->
+  <!-- ABOUT -->
   <section class="view" id="view-about">
     <div class="app-bar">
       <button class="back-btn" data-home>‹</button>
@@ -855,9 +478,7 @@ input{font-family:inherit}
     </div>
   </section>
 
-  <!-- ==========================================================
-       RESPIRING OVERLAY
-       ========================================================== -->
+  <!-- RESPIRING -->
   <div id="respring">
     <svg viewBox="0 0 170 170">
       <path d="M150.37 130.25c-2.45 5.66-5.35 10.87-8.71 15.66-4.58 6.53-8.33 11.05-11.22 13.56-4.48 4.12-9.28 6.23-14.42 6.35-3.69 0-8.14-1.05-13.32-3.18-5.19-2.12-9.97-3.17-14.34-3.17-4.58 0-9.49 1.05-14.75 3.17-5.26 2.13-9.5 3.24-12.74 3.35-4.35.13-9.1-1.9-14.24-6.08-3.04-2.52-6.85-7.1-11.43-13.74-6.08-8.87-10.97-18.49-14.67-28.87-3.7-10.38-5.55-20.34-5.55-29.87 0-13.13 3.32-23.82 9.97-32.07 6.65-8.25 15.01-12.45 25.08-12.6 4.78 0 10.02 1.27 15.74 3.8 5.72 2.54 9.54 3.81 11.46 3.81 1.63 0 5.48-1.33 11.55-3.99 6.07-2.67 11.18-3.92 15.34-3.77 13.79.54 24.32 5.92 31.58 16.14-11.75 7.15-17.5 16.54-17.26 28.17.22 9.4 3.96 17.3 11.22 23.72 7.26 6.43 15.98 9.77 26.17 10.03-3.21 9.94-7.56 19.82-13.06 29.64zm-30.82-96.64c0-7.85 2.76-15.13 8.28-21.84 5.52-6.71 12.56-10.82 21.12-12.33.22 1.3 33 2.18 33 2.18s.11 1.41.11 4.24c0 7.39-2.79 14.52-8.38 21.39-5.58 6.87-12.63 11.02-21.14 12.44-.33-1.41-3.99-2.28-3.99-2.28s.09-1.54.09-3.8z"/>
@@ -870,24 +491,27 @@ input{font-family:inherit}
 </div>
 
 <script>
-/* ==============================================================
-   TINY HELPERS
-   ============================================================== */
+'use strict';
+
+/* ============================================================
+   HELPERS
+   ============================================================ */
 const $  = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
 const sleep = ms => new Promise(r => setTimeout(r, ms));
-const rand  = (a, b) => Math.random() * (b - a) + a;
-const pick  = arr => arr[Math.floor(Math.random() * arr.length)];
+const rand = (a, b) => Math.random() * (b - a) + a;
+const pick = arr => arr[Math.floor(Math.random() * arr.length)];
 const hexAddr = (bytes = 8) =>
   '0x' + Array.from({ length: bytes }, () =>
     Math.floor(Math.random() * 256).toString(16).padStart(2, '0')).join('');
+const escapeHtml = s => String(s).replace(/[&<>"]/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;' }[c]));
 
 const buzz = (p = 8) => { try { navigator.vibrate && navigator.vibrate(p); } catch (e) {} };
 
 /* ---- Audio ---- */
 let actx = null;
 function blip(freq = 660, dur = .08, type = 'sine', vol = .04) {
-  if (!state.sound) return;
+  if (!state.opts.sound) return;
   try {
     actx = actx || new (window.AudioContext || window.webkitAudioContext)();
     if (actx.state === 'suspended') actx.resume();
@@ -901,17 +525,16 @@ function blip(freq = 660, dur = .08, type = 'sine', vol = .04) {
 }
 function chord(freqs, dur = .5) { freqs.forEach((f, i) => setTimeout(() => blip(f, dur, 'sine', .035), i * 90)); }
 
-/* ==============================================================
+/* ============================================================
    STATE
-   ============================================================== */
+   ============================================================ */
 const DEFAULT_STATE = {
   jailbroken: false,
   installed: [],
-  sound: true,
   accent: '#22d3ee',
   opts: {
     inject: true, verbose: true, ota: true, ssh: false,
-    safemode: false, hidejb: false, autorespring: true
+    safemode: false, hidejb: false, autorespring: true, sound: true
   },
   chain: 'KFD · PAC Bypass'
 };
@@ -921,31 +544,17 @@ let state = (() => {
     const raw = localStorage.getItem('dopamine-x');
     if (!raw) return structuredClone(DEFAULT_STATE);
     const parsed = JSON.parse(raw);
-    return {
-      ...structuredClone(DEFAULT_STATE),
-      ...parsed,
-      opts: { ...DEFAULT_STATE.opts, ...(parsed.opts || {}) }
-    };
+    return { ...structuredClone(DEFAULT_STATE), ...parsed, opts: { ...DEFAULT_STATE.opts, ...(parsed.opts || {}) } };
   } catch (e) { return structuredClone(DEFAULT_STATE); }
 })();
+function save() { try { localStorage.setItem('dopamine-x', JSON.stringify(state)); } catch (e) {} }
 
-function save() {
-  try { localStorage.setItem('dopamine-x', JSON.stringify(state)); } catch (e) {}
-}
-
-/* ==============================================================
-   DEVICE DETECTION
-   ============================================================== */
+/* ============================================================
+   DEVICE FINGERPRINT
+   ============================================================ */
 const ua = navigator.userAgent;
-
 const DEVICE = {
-  model: (() => {
-    if (/iPad/.test(ua)) return 'iPad';
-    if (/iPhone/.test(ua)) return 'iPhone';
-    if (/Macintosh/.test(ua)) return 'Mac (Desktop)';
-    if (/Android/.test(ua)) return 'Android Device';
-    return 'Desktop Browser';
-  })(),
+  model: /iPad/.test(ua) ? 'iPad' : /iPhone/.test(ua) ? 'iPhone' : /Macintosh/.test(ua) ? 'Mac (Desktop)' : /Android/.test(ua) ? 'Android Device' : 'Desktop Browser',
   os: (() => {
     const m = ua.match(/OS (\d+)[_.](\d+)(?:[_.](\d+))?/);
     if (m) return `iOS ${m[1]}.${m[2]}${m[3] ? '.' + m[3] : ''}`;
@@ -962,72 +571,68 @@ const DEVICE = {
   tz: Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC'
 };
 
-/* ==============================================================
-   VIEW ROUTER
-   ============================================================== */
+/* ============================================================
+   VIEW ROUTER + TOASTS
+   ============================================================ */
 function showView(name) {
   $$('.view').forEach(v => v.classList.toggle('active', v.id === 'view-' + name));
   const scroller = $('#view-' + name + ' .scroll');
   if (scroller) scroller.scrollTop = 0;
 }
 
-/* ==============================================================
-   TOASTS
-   ============================================================== */
 function toast(msg, kind = '') {
   const el = document.createElement('div');
   el.className = 'toast ' + kind;
   el.textContent = msg;
   $('#toasts').appendChild(el);
   requestAnimationFrame(() => el.classList.add('show'));
-  setTimeout(() => {
-    el.classList.remove('show');
-    setTimeout(() => el.remove(), 320);
-  }, 2300);
+  setTimeout(() => { el.classList.remove('show'); setTimeout(() => el.remove(), 320); }, 2300);
 }
 
-/* ==============================================================
-   STATUS BAR CLOCK + BATTERY
-   ============================================================== */
-function tickClock() {
-  const d = new Date();
-  let h = d.getHours(), m = String(d.getMinutes()).padStart(2, '0');
-  h = h % 12 || 12;
-  $('#sbTime').textContent = `${h}:${m}`;
+/* ============================================================
+   ACCENT
+   ============================================================ */
+function applyAccent(color) {
+  document.documentElement.style.setProperty('--acc', color);
+  // Derive a slightly different variant for gradient pair if desired
+  $$('#accentChips .chip').forEach(c => c.classList.toggle('on', c.dataset.accent === color));
 }
-tickClock();
-setInterval(tickClock, 15000);
+$$('#accentChips .chip').forEach(c => c.addEventListener('click', () => {
+  applyAccent(c.dataset.accent);
+  state.accent = c.dataset.accent; save();
+  buzz(6); blip(820, .05);
+}));
 
-if (navigator.getBattery) {
-  navigator.getBattery().then(b => {
-    const update = () => {
-      const pct = Math.round(b.level * 100);
-      $('#sbBatt').style.width = pct + '%';
-      $('#sbBattWrap').classList.toggle('low', pct <= 20);
-    };
-    update();
-    b.addEventListener('levelchange', update);
-  }).catch(() => {});
-}
+/* ============================================================
+   RENDER ALL
+   ============================================================ */
+function renderAll() {
+  renderApps();
+  syncSwitches();
 
-/* ==============================================================
-   BOOT SEQUENCE
-   ============================================================== */
-window.addEventListener('load', async () => {
-  applyAccent(state.accent);
-  renderAll();
-  await sleep(1900);
+  $('#d-model').textContent = DEVICE.model;
+  $('#d-os').textContent = DEVICE.os;
+  $('#d-chip').textContent = `${DEVICE.chip} · ${DEVICE.arch}`;
+  $('#d-screen').textContent = DEVICE.screen;
+  $('#d-cores').textContent = `${DEVICE.cores} / ${DEVICE.mem}`;
+  $('#d-chain').textContent = state.chain;
+
   if (state.jailbroken) {
-    showView('home');
-    toast('Rootless environment restored', 'ok');
+    $('#d-status').textContent = 'Jailbroken · Rootless';
+    $('#d-status').className = 'kv-v c-ok';
+    $('#jbLabel').textContent = 'Re-run Exploit';
   } else {
-    showView('exploit');
+    $('#d-status').textContent = 'Unjailbroken';
+    $('#d-status').className = 'kv-v c-err';
   }
-});
 
-/* ==============================================================
-   OPTION TOGGLES (shared across Settings + Exploit views)
-   ============================================================== */
+  $$('#chainChips .chip').forEach(c => c.classList.toggle('on', c.dataset.chain === state.chain));
+  $$('#accentChips .chip').forEach(c => c.classList.toggle('on', c.dataset.accent === state.accent));
+}
+
+/* ============================================================
+   OPTIONS
+   ============================================================ */
 document.addEventListener('click', e => {
   const sw = e.target.closest('.sw');
   if (!sw) return;
@@ -1036,7 +641,6 @@ document.addEventListener('click', e => {
   const on = !sw.classList.contains('on');
   sw.classList.toggle('on', on);
   state.opts[key] = on;
-  if (key === 'sound') state.sound = on;
   save();
   syncSwitches();
   buzz(6);
@@ -1046,28 +650,26 @@ document.addEventListener('click', e => {
 function syncSwitches() {
   $$('.sw[data-opt]').forEach(sw => {
     const k = sw.dataset.opt;
-    const val = (k === 'sound') ? state.sound : !!state.opts[k];
-    sw.classList.toggle('on', val);
+    sw.classList.toggle('on', !!state.opts[k]);
   });
 }
 
-/* ==============================================================
-   EXPLOIT CHAIN CHIPS
-   ============================================================== */
+/* ============================================================
+   CHAIN CHIPS
+   ============================================================ */
 $$('#chainChips .chip').forEach(chip => {
   chip.addEventListener('click', () => {
     $$('#chainChips .chip').forEach(c => c.classList.remove('on'));
     chip.classList.add('on');
     state.chain = chip.dataset.chain;
     $('#d-chain').textContent = state.chain;
-    save();
-    buzz(6);
+    save(); buzz(6);
   });
 });
 
-/* ==============================================================
+/* ============================================================
    EXPLOIT SEQUENCE
-   ============================================================== */
+   ============================================================ */
 let running = false;
 
 function logLine(text, cls = '') {
@@ -1087,105 +689,71 @@ function setStage(name, pct) {
   $('#jbFill').style.width = pct + '%';
 }
 
-/* --- Build a fresh randomised exploit script each run --- */
 function buildScript() {
   const chain = state.chain;
   const verbose = state.opts.verbose;
   const kbase = hexAddr(8);
-  const stages = [];
 
-  stages.push({
-    title: 'Fingerprinting target',
-    logs: [
+  const stages = [
+    { title: 'Fingerprinting target', logs: [
       { t: '[*] Establishing sandbox escape via WebKit surface…', c: '' },
       { t: `[+] Target: ${DEVICE.model} · ${DEVICE.os}`, c: 'ok' },
       { t: `[+] Architecture: ${DEVICE.arch} · ${DEVICE.cores} cores`, c: 'ok' },
       { t: `[*] Kernel base candidate: ${kbase}`, c: '' },
       { t: '[*] Reading IODeviceTree /chosen…', c: '' },
       { t: `[+] Board config parsed. CPID ${Math.floor(rand(0x8000, 0xFFFF)).toString(16).toUpperCase()}`, c: 'ok' }
-    ]
-  });
-
-  stages.push({
-    title: 'Priming memory spray',
-    logs: [
+    ]},
+    { title: 'Priming memory spray', logs: [
       { t: '[*] Allocating IOSurface objects…', c: '' },
       { t: `[*] Spraying 0x${Math.floor(rand(0x2000, 0x9000)).toString(16)} pages`, c: '' },
       { t: `[·] ${hexAddr(4)} → ${hexAddr(4)}  [mapped]`, c: 'dim' },
       { t: `[·] ${hexAddr(4)} → ${hexAddr(4)}  [mapped]`, c: 'dim' },
       { t: '[+] Heap groom stabilised.', c: 'ok' }
-    ]
-  });
-
-  stages.push({
-    title: `Deploying ${chain}`,
-    logs: [
+    ]},
+    { title: `Deploying ${chain}`, logs: [
       { t: `[*] Loading chain: ${chain}`, c: '' },
       { t: '[!] Triggering out-of-bounds read…', c: 'warn' },
       { t: `[+] Leaked kernel pointer ${hexAddr(8)}`, c: 'ok' },
       { t: `[+] Leaked task port ${hexAddr(8)}`, c: 'ok' },
       { t: '[+] Kernel read/write primitive acquired.', c: 'ok' }
-    ]
-  });
-
-  stages.push({
-    title: 'Bypassing PAC / SPTM',
-    logs: [
+    ]},
+    { title: 'Bypassing PAC / SPTM', logs: [
       { t: '[*] Locating pointer authentication keys…', c: '' },
       { t: `[·] PACIA key slot @ ${hexAddr(8)}`, c: 'dim' },
       { t: '[+] Signing forged return addresses…', c: '' },
       { t: '[+] PAC bypass complete.', c: 'ok' },
       { t: '[+] SPTM page-table isolation defeated.', c: 'ok' }
-    ]
-  });
-
-  stages.push({
-    title: 'Escalating privileges',
-    logs: [
+    ]},
+    { title: 'Escalating privileges', logs: [
       { t: '[*] Patching ucred → uid 0 / gid 0…', c: '' },
       { t: `[·] ucred @ ${hexAddr(8)}   cr_uid: 501 → 0`, c: 'dim' },
       { t: '[+] sandbox_extensions cleared.', c: 'ok' },
       { t: '[+] amfi / trust cache bypassed.', c: 'ok' },
       { t: '[!] Code signing enforcement disabled.', c: 'warn' }
-    ]
-  });
-
-  stages.push({
-    title: 'Remounting root filesystem',
-    logs: [
+    ]},
+    { title: 'Remounting root filesystem', logs: [
       { t: '[*] Requesting rootless remount…', c: '' },
       { t: '[+] /private/preboot mounted read-write.', c: 'ok' },
       { t: '[*] Creating /var/jb symlink structure…', c: '' },
       { t: '[+] Rootless hierarchy online.', c: 'ok' }
-    ]
-  });
-
-  stages.push({
-    title: 'Installing bootstrap',
-    logs: [
+    ]},
+    { title: 'Installing bootstrap', logs: [
       { t: '[*] Extracting bootstrap tarball…', c: '' },
       { t: '[·] bin/  sbin/  usr/  lib/  Library/', c: 'dim' },
       { t: '[+] dpkg initialised.', c: 'ok' },
       { t: '[+] apt repositories configured.', c: 'ok' },
       { t: '[+] uicache rebuilt.', c: 'ok' },
-      state.opts.inject ? { t: '[+] Substrate injected into SpringBoard.', c: 'ok' }
-                        : { t: '[!] Tweak injection disabled by user.', c: 'warn' },
-      state.opts.ssh ? { t: '[+] dropbear listening on :22', c: 'ok' }
-                     : { t: '[·] SSH disabled.', c: 'dim' },
+      state.opts.inject ? { t: '[+] Substrate injected into SpringBoard.', c: 'ok' } : { t: '[!] Tweak injection disabled by user.', c: 'warn' },
+      state.opts.ssh ? { t: '[+] dropbear listening on :22', c: 'ok' } : { t: '[·] SSH disabled.', c: 'dim' },
       state.opts.ota ? { t: '[+] OTA update daemon blocked.', c: 'ok' } : null
-    ].filter(Boolean)
-  });
-
-  stages.push({
-    title: 'Finalising',
-    logs: [
+    ].filter(Boolean)},
+    { title: 'Finalising', logs: [
       { t: '[*] Flushing kernel caches…', c: '' },
       { t: '[+] Trust chain stable.', c: 'ok' },
       { t: '[✓] Exploit routine finalised. Respring imminent.', c: 'ok' }
-    ]
-  });
+    ]}
+  ];
 
-  // Optionally trim verbose-only lines
   if (!verbose) {
     return stages.map(s => ({
       title: s.title,
@@ -1247,11 +815,9 @@ async function runExploit() {
   running = false;
 }
 
-$('#jbBtn').addEventListener('click', runExploit);
-
-/* ==============================================================
+/* ============================================================
    RESPIRING
-   ============================================================== */
+   ============================================================ */
 async function respring(message = 'Respringe…') {
   const rs = $('#respring'), fill = $('#rsFill'), txt = $('#rsText');
   txt.textContent = message;
@@ -1271,9 +837,9 @@ async function respring(message = 'Respringe…') {
   rs.classList.remove('on');
 }
 
-/* ==============================================================
-   APPS DATA
-   ============================================================== */
+/* ============================================================
+   APPS
+   ============================================================ */
 const APPS = [
   { id: 'sileo',    name: 'Sileo',    glyph: 'S',  c1: '#38bdf8', c2: '#4f46e5', dock: true },
   { id: 'terminal', name: 'Terminal', glyph: '>_', c1: '#1f2937', c2: '#0b1220', dock: true, mono: true },
@@ -1288,7 +854,6 @@ const APPS = [
 function renderApps() {
   const grid = $('#appGrid'), dock = $('#dockGrid');
   grid.innerHTML = ''; dock.innerHTML = '';
-
   const homeApps = APPS.filter(a => !a.dock);
   const dockApps = APPS.filter(a => a.dock);
 
@@ -1325,9 +890,9 @@ function launchApp(id) {
 
 $$('[data-home]').forEach(b => b.addEventListener('click', () => { showView('home'); buzz(5); }));
 
-/* ==============================================================
-   SILEO — PACKAGES
-   ============================================================== */
+/* ============================================================
+   SILEO
+   ============================================================ */
 const REPOS = [
   { name: 'Chariz',    url: 'https://repo.chariz.com/',              ok: true },
   { name: 'Havoc',     url: 'https://apt.havoc.app/',                ok: true },
@@ -1351,8 +916,7 @@ const PACKAGES = [
 
 let installQueue = [];
 let installing = false;
-
-function pkgById(id) { return PACKAGES.find(p => p.id === id); }
+const pkgById = id => PACKAGES.find(p => p.id === id);
 
 function pkgStatus(id) {
   if (state.installed.includes(id)) return 'installed';
@@ -1380,8 +944,7 @@ async function processQueue() {
     save();
     installQueue.shift();
     renderSileo();
-    const p = pkgById(id);
-    toast(`${p.name} installed`, 'ok');
+    toast(`${pkgById(id).name} installed`, 'ok');
     buzz(12); blip(980, .09);
     await sleep(220);
   }
@@ -1396,8 +959,7 @@ async function processQueue() {
 
 function removePkg(id) {
   state.installed = state.installed.filter(x => x !== id);
-  save();
-  renderSileo();
+  save(); renderSileo();
   toast(`${pkgById(id).name} removed`, 'warn');
   buzz(10); blip(300, .1);
 }
@@ -1422,15 +984,10 @@ $('#pkgSearch').addEventListener('input', e => {
 function pkgCard(p) {
   const status = pkgStatus(p.id);
   let btn;
-  if (status === 'installed') {
-    btn = `<button class="ibtn done" data-remove="${p.id}">Installed</button>`;
-  } else if (status === 'installing') {
-    btn = `<button class="ibtn busy">Installing…</button>`;
-  } else if (status === 'queued') {
-    btn = `<button class="ibtn busy">Queued</button>`;
-  } else {
-    btn = `<button class="ibtn" data-install="${p.id}">Get</button>`;
-  }
+  if (status === 'installed')      btn = `<button class="ibtn done" data-remove="${p.id}">Installed</button>`;
+  else if (status === 'installing')btn = `<button class="ibtn busy">Installing…</button>`;
+  else if (status === 'queued')    btn = `<button class="ibtn busy">Queued</button>`;
+  else                              btn = `<button class="ibtn" data-install="${p.id}">Get</button>`;
   return `
     <div class="pkg">
       <div class="pkg-ico">${p.glyph}</div>
@@ -1446,7 +1003,6 @@ function pkgCard(p) {
 function renderSileo() {
   $('#pkgCount').textContent = state.installed.length;
 
-  // Featured / search
   let list = PACKAGES;
   if (searchQuery) {
     list = PACKAGES.filter(p =>
@@ -1457,7 +1013,6 @@ function renderSileo() {
     ? list.map(pkgCard).join('')
     : `<div style="text-align:center;color:var(--mut-2);font-size:12px;padding:32px 0">No packages found</div>`;
 
-  // Installed
   const inst = state.installed.map(pkgById).filter(Boolean);
   $('#pane-installed').innerHTML = inst.length
     ? inst.map(p => `
@@ -1471,24 +1026,19 @@ function renderSileo() {
         </div>`).join('')
     : `<div style="text-align:center;color:var(--mut-2);font-size:12px;padding:32px 0">No packages installed yet</div>`;
 
-  // Sources
   $('#pane-sources').innerHTML = REPOS.map(r => `
     <div class="repo">
-      <div>
-        <h4>${r.name}</h4>
-        <p>${r.url}</p>
-      </div>
+      <div><h4>${r.name}</h4><p>${r.url}</p></div>
       <span class="verified" style="${r.ok ? '' : 'color:var(--mut-2)'}">${r.ok ? '✓ VERIFIED' : 'UNVERIFIED'}</span>
     </div>`).join('');
 
-  // Bind buttons
   $$('[data-install]').forEach(b => b.onclick = () => queueInstall(b.dataset.install));
   $$('[data-remove]').forEach(b => b.onclick = () => removePkg(b.dataset.remove));
 }
 
-/* ==============================================================
-   VIRTUAL FILE SYSTEM
-   ============================================================== */
+/* ============================================================
+   VIRTUAL FS
+   ============================================================ */
 const VFS_DIRS = {
   '/': ['Applications', 'Library', 'System', 'bin', 'etc', 'private', 'usr', 'var'],
   '/Applications': ['Sileo.app', 'Terminal.app', 'Filza.app', 'Dopamine.app'],
@@ -1523,9 +1073,9 @@ const VFS_FILES = {
   '/Library/LaunchDaemons/com.dopamine.jailbreakd.plist': '<?xml version="1.0"?>\n<plist><dict><key>Label</key><string>com.dopamine.jailbreakd</string></dict></plist>\n'
 };
 
-/* ==============================================================
+/* ============================================================
    FILES APP
-   ============================================================== */
+   ============================================================ */
 let filesCwd = '/';
 
 function filesGo(path) {
@@ -1551,25 +1101,21 @@ function filesGo(path) {
         <span class="file-ico">📄</span><span class="file-name">${f.split('/').pop()}</span><span class="file-chev">·</span>
       </div>`).join('');
 
-  $$('#filesList [data-dir]').forEach(el => el.onclick = () => {
-    filesGo(el.dataset.dir); buzz(5);
-  });
+  $$('#filesList [data-dir]').forEach(el => el.onclick = () => { filesGo(el.dataset.dir); buzz(5); });
   $$('#filesList [data-file]').forEach(el => el.onclick = () => {
-    toast(el.dataset.file.split('/').pop() + ' opened', '');
-    buzz(5);
+    toast(el.dataset.file.split('/').pop() + ' opened', ''); buzz(5);
   });
 }
 
 $('#filesUp').onclick = () => {
   if (filesCwd === '/') { showView('home'); return; }
   const parent = filesCwd.substring(0, filesCwd.lastIndexOf('/')) || '/';
-  filesGo(parent);
-  buzz(5);
+  filesGo(parent); buzz(5);
 };
 
-/* ==============================================================
-   ABOUT APP
-   ============================================================== */
+/* ============================================================
+   ABOUT
+   ============================================================ */
 function renderAbout() {
   const rows = [
     ['Model', DEVICE.model],
@@ -1586,14 +1132,32 @@ function renderAbout() {
     ['Packages', state.installed.length],
     ['Status', state.jailbroken ? 'Jailbroken' : 'Unjailbroken']
   ];
-  $('#aboutTable').innerHTML = rows.map(([k, v]) => `
-    <div class="kv"><span class="kv-k">${k}</span><span class="kv-v">${v}</span></div>`).join('');
+  $('#aboutTable').innerHTML = rows.map(([k, v]) =>
+    `<div class="kv"><span class="kv-k">${k}</span><span class="kv-v">${v}</span></div>`).join('');
 }
 
-/* ==============================================================
-   TERMINAL APP — FULL SHELL
-   ============================================================== */
-const shell = { cwd: '/', hist: [], histIdx: -1, user: 'root' };
+/* ============================================================
+   RESTORE ROOTFS
+   ============================================================ */
+async function doRestore() {
+  toast('Restoring RootFS…', 'warn');
+  await respring('Restoring RootFS…');
+  state.jailbroken = false;
+  state.installed = [];
+  installQueue = [];
+  save();
+  $('#d-status').textContent = 'Unjailbroken';
+  $('#d-status').className = 'kv-v c-err';
+  $('#jbLabel').textContent = 'Start Exploit Process';
+  showView('exploit');
+  toast('RootFS restored — device is stock', 'ok');
+}
+$('#restoreBtn').onclick = doRestore;
+
+/* ============================================================
+   TERMINAL SHELL
+   ============================================================ */
+const shell = { cwd: '/', hist: [], histIdx: -1 };
 
 function out(text, cls = '') {
   const box = $('#termOut');
@@ -1605,21 +1169,19 @@ function out(text, cls = '') {
   while (box.children.length > 400) box.removeChild(box.firstChild);
 }
 
-function focusTerm() {
-  setTimeout(() => $('#termInput').focus(), 320);
-}
+function focusTerm() { setTimeout(() => $('#termInput').focus(), 320); }
 
 function resolvePath(p) {
   if (!p) return shell.cwd;
   const base = p.startsWith('/') ? p : (shell.cwd === '/' ? '' : shell.cwd) + '/' + p;
   const parts = base.split('/').filter(Boolean);
-  const outParts = [];
+  const stack = [];
   for (const part of parts) {
     if (part === '.') continue;
-    if (part === '..') outParts.pop();
-    else outParts.push(part);
+    if (part === '..') stack.pop();
+    else stack.push(part);
   }
-  return '/' + outParts.join('/');
+  return '/' + stack.join('/');
 }
 
 const CMDS = {
@@ -1641,24 +1203,22 @@ const CMDS = {
     out('  apt list          browse repositories');
     out('  uicache           rebuild icon cache');
     out('  sbreload          restart SpringBoard');
-    out('  open <app>        launch an app');
-    out('  theme <name>      switch accent colour');
+    out('  open <app>        launch an app (sileo/terminal/settings/files/about)');
+    out('  theme <name>      accent: cyan|violet|pink|emerald|amber');
     out('  clear             clear the screen');
     out('  matrix            ???');
   },
-
   neofetch() {
-    out('&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;.:&#39;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:&#39;', 'o-acc');
+    out('&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;.:\'&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:\'', 'o-acc');
     out('&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;root@dopamine', 'o-acc');
-    out('&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:.&#39;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;.&#39;:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;─────────────', 'o-acc');
-    out(`&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:.&#39;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;.&#39;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;OS: ${DEVICE.os}`, '');
-    out(`&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:&#39;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Host: ${DEVICE.model}`, '');
-    out(`&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:&#39;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Kernel: Darwin 24.0.0`, '');
-    out(`&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:&#39;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Shell: zsh 5.9`, '');
-    out(`&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:&#39;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Packages: ${state.installed.length}`, '');
-    out(`&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:&#39;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Status: ${state.jailbroken ? 'Jailbroken (rootless)' : 'Stock'}`, 'o-ok');
+    out('&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:.\'&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;.\':&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;─────────────', 'o-acc');
+    out(`&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:.\'&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;.\'&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;OS: ${DEVICE.os}`, '');
+    out(`&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:\'&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Host: ${DEVICE.model}`, '');
+    out(`&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:\'&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Kernel: Darwin 24.0.0`, '');
+    out(`&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:\'&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Shell: zsh 5.9`, '');
+    out(`&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:\'&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Packages: ${state.installed.length}`, '');
+    out(`&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:\'&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Status: ${state.jailbroken ? 'Jailbroken (rootless)' : 'Stock'}`, 'o-ok');
   },
-
   ls(args) {
     const p = resolvePath(args[0]);
     const dirs = VFS_DIRS[p];
@@ -1673,41 +1233,30 @@ const CMDS = {
     out((dirs || []).map(d => `<span class="o-acc">${d}/</span>`).join('  ') +
         (files.length ? '  ' + files.map(f => f.split('/').pop()).join('  ') : ''));
   },
-
   cd(args) {
     const p = resolvePath(args[0] || '/');
     if (VFS_DIRS[p]) { shell.cwd = p; return; }
     out(`cd: no such file or directory: ${args[0]}`, 'o-err');
   },
-
   pwd() { out(shell.cwd); },
-
   cat(args) {
     if (!args[0]) return out('usage: cat <file>', 'o-err');
     const p = resolvePath(args[0]);
-    if (VFS_FILES[p] !== undefined) return out(VFS_FILES[p].replace(/\n/g, '<br>'));
+    if (VFS_FILES[p] !== undefined) return out(escapeHtml(VFS_FILES[p]).replace(/\n/g, '<br>'));
     out(`cat: ${args[0]}: No such file or directory`, 'o-err');
   },
-
-  echo(args) { out(args.join(' ')); },
-
+  echo(args) { out(escapeHtml(args.join(' '))); },
   whoami() { out('root'); },
-
   id() { out('uid=0(root) gid=0(wheel) groups=0(wheel),501(mobile)'); },
-
   uname(args) {
-    if (args.includes('-a')) {
-      out('Darwin iPhone 24.0.0 Darwin Kernel Version 24.0.0: Dopamine X rootless (simulated) arm64e');
-    } else out('Darwin');
+    if (args.includes('-a')) out('Darwin iPhone 24.0.0 Darwin Kernel Version 24.0.0: Dopamine X rootless (simulated) arm64e');
+    else out('Darwin');
   },
-
   uptime() {
     const d = new Date();
     out(`${d.toTimeString().slice(0, 8)} up ${Math.floor(rand(1, 40))} days, load averages: 0.42 0.38 0.31`);
   },
-
   date() { out(new Date().toString()); },
-
   ps() {
     out('  PID TTY      TIME     CMD', 'o-dim');
     out('    1 ??       0:12.44 launchd');
@@ -1717,14 +1266,12 @@ const CMDS = {
     out('  187 ??       0:00.18 dropbear');
     out('  301 ttys000  0:00.01 -zsh');
   },
-
   df() {
     out('Filesystem      Size   Used  Avail Capacity  Mounted on', 'o-dim');
     out('/dev/disk0s1s1  64Gi   38Gi   26Gi    60%    /');
     out('/dev/disk0s1s2   8Gi    3Gi    5Gi    38%    /private/var');
     out('devfs           1Ki    1Ki     0Bi  100%    /dev');
   },
-
   dpkg(args) {
     if (!state.installed.length) return out('dpkg: no packages installed', 'o-dim');
     out('Desired=Unknown/Install/Remove/Purge', 'o-dim');
@@ -1734,7 +1281,6 @@ const CMDS = {
       out(`ii  ${p.name.padEnd(20)} ${p.ver.padEnd(12)} ${p.desc}`);
     });
   },
-
   apt(args) {
     if (args[0] === 'list' || !args.length) {
       out('Listing available packages…', 'o-dim');
@@ -1746,17 +1292,14 @@ const CMDS = {
     }
     out(`apt: unknown subcommand '${args[0]}'`, 'o-err');
   },
-
   uicache() {
     out('Rebuilding icon cache…', 'o-dim');
     setTimeout(() => out('Icon cache rebuilt successfully.', 'o-ok'), 400);
   },
-
   sbreload() {
     out('Reloading SpringBoard…', 'o-warn');
     setTimeout(() => respring('SpringBoard reload…'), 400);
   },
-
   open(args) {
     const app = (args[0] || '').toLowerCase();
     const map = { sileo: 'sileo', terminal: 'terminal', settings: 'settings', files: 'files', about: 'about' };
@@ -1767,7 +1310,6 @@ const CMDS = {
       out(`open: application not found: ${args[0] || ''}`, 'o-err');
     }
   },
-
   theme(args) {
     const themes = { cyan: '#22d3ee', violet: '#a855f7', pink: '#ec4899', emerald: '#34d399', amber: '#fbbf24' };
     const t = (args[0] || '').toLowerCase();
@@ -1779,9 +1321,7 @@ const CMDS = {
       out('theme: available → ' + Object.keys(themes).join(', '), 'o-err');
     }
   },
-
   clear() { $('#termOut').innerHTML = ''; },
-
   matrix() {
     out('Wake up, Neo…', 'o-ok');
     let n = 0;
@@ -1790,28 +1330,75 @@ const CMDS = {
       if (++n > 12) clearInterval(iv);
     }, 90);
   },
-
-  jailbreak() {
-    out('Device is already jailbroken (rootless).', 'o-ok');
-  },
-
+  jailbreak() { out('Device is already jailbroken (rootless).', 'o-ok'); },
   respring() { out('Respringe…', 'o-warn'); setTimeout(() => respring('Respringe…'), 350); },
-
   reboot() {
     out('Simulating userspace reboot…', 'o-warn');
     setTimeout(() => respring('Rebooting userspace…'), 700);
   },
-
   exit() { out('logout', 'o-dim'); showView('home'); }
 };
 
 function runCommand(raw) {
   const line = raw.trim();
   if (!line) return;
-  out(`<span class="o-acc">root#</span> <span class="o-cmd">${line.replace(/</g, '&lt;')}</span>`);
+  out(`<span class="o-acc">root#</span> <span class="o-cmd">${escapeHtml(line)}</span>`);
 
   shell.hist.push(line);
   shell.histIdx = shell.hist.length;
 
   const parts = line.split(/\s+/);
-  const cmd =
+  const cmd = parts[0].toLowerCase();
+  const args = parts.slice(1);
+
+  if (CMDS[cmd]) {
+    try { CMDS[cmd](args); }
+    catch (e) { out('shell: ' + e.message, 'o-err'); }
+  } else {
+    out(`zsh: command not found: ${cmd}`, 'o-err');
+  }
+}
+
+$('#termInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter') {
+    runCommand(e.target.value);
+    e.target.value = '';
+    e.preventDefault();
+  } else if (e.key === 'ArrowUp') {
+    e.preventDefault();
+    if (shell.histIdx > 0) { shell.histIdx--; e.target.value = shell.hist[shell.histIdx] || ''; }
+  } else if (e.key === 'ArrowDown') {
+    e.preventDefault();
+    if (shell.histIdx < shell.hist.length - 1) { shell.histIdx++; e.target.value = shell.hist[shell.histIdx] || ''; }
+    else { shell.histIdx = shell.hist.length; e.target.value = ''; }
+  }
+});
+
+/* ============================================================
+   BOOT — runs last, everything above is defined
+   ============================================================ */
+window.addEventListener('load', async () => {
+  applyAccent(state.accent);
+  renderAll();
+  syncSwitches();
+
+  await sleep(1900);
+
+  if (state.jailbroken) {
+    showView('home');
+    toast('Rootless environment restored', 'ok');
+  } else {
+    showView('exploit');
+  }
+
+  // Prime the terminal with a welcome banner once the user opens it
+  out('Dopamine X Mobile Shell [v3.1.0]', 'o-acc');
+  out("Type 'help' for the command directory.", 'o-dim');
+  out('', '');
+});
+
+/* Wire the exploit button last */
+$('#jbBtn').addEventListener('click', runExploit);
+</script>
+</body>
+</html>
