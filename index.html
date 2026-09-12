@@ -2,287 +2,1079 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no">
-<meta name="theme-color" content="#04040a">
-<title>Dopamine X — Next-Gen iOS Simulation Suite</title>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,maximum-scale=1,user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#000000">
+<title>Dopamine X</title>
 <style>
+/* ═══════════════════════════════════════════════════════════
+   DESIGN TOKENS
+   ═══════════════════════════════════════════════════════════ */
 :root{
-  --bg:#04040a;
-  --stroke:rgba(255,255,255,.085);
-  --txt:#eef1f8;
-  --mut:#8b93a7;
-  --mut-2:#5c6377;
   --acc:#22d3ee;
-  --acc2:#a855f7;
-  --acc3:#ec4899;
+  --acc-2:#a855f7;
+  --acc-3:#ec4899;
   --ok:#34d399;
   --warn:#fbbf24;
   --err:#f87171;
-  --radius:20px;
-  --status-h:calc(30px + env(safe-area-inset-top,0px));
-  --safe-b:env(safe-area-inset-bottom,0px);
+  --txt:#f5f7fb;
+  --mut:#8b93a7;
+  --mut-2:#4e5468;
+  --stroke:rgba(255,255,255,.08);
+  --stroke-2:rgba(255,255,255,.14);
+  --glass:rgba(28,28,40,.55);
+  --glass-2:rgba(255,255,255,.06);
+  --radius:22px;
+  --safe-top:env(safe-area-inset-top,0px);
+  --safe-bot:env(safe-area-inset-bottom,0px);
+  --status-h:calc(38px + var(--safe-top));
+  --spring:cubic-bezier(.22,1.2,.36,1);
+  --ease:cubic-bezier(.4,0,.2,1);
 }
+
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
-html,body{height:100%}
+html,body{height:100%;overflow:hidden}
 body{
   background:#000;color:var(--txt);
   font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","SF Pro Text","Segoe UI",Roboto,Helvetica,Arial,sans-serif;
-  -webkit-font-smoothing:antialiased;
+  -webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;
   display:flex;align-items:center;justify-content:center;
-  height:100dvh;overflow:hidden;user-select:none;
+  height:100dvh;user-select:none;-webkit-user-select:none;
 }
-button{font-family:inherit;color:inherit;border:none;background:none;cursor:pointer}
-input{font-family:inherit}
+button{font:inherit;color:inherit;border:none;background:none;cursor:pointer;-webkit-appearance:none}
+input{font:inherit;-webkit-appearance:none}
 ::-webkit-scrollbar{width:0;height:0}
 
-.device{position:relative;width:min(430px,100vw);height:min(100dvh,100dvh);background:var(--bg);overflow:hidden;isolation:isolate}
+/* ═══════════════════════════════════════════════════════════
+   DEVICE SHELL
+   ═══════════════════════════════════════════════════════════ */
+.device{
+  position:relative;
+  width:min(430px,100vw);
+  height:min(100dvh,100dvh);
+  background:#000;
+  overflow:hidden;
+  isolation:isolate;
+}
 @media (min-width:520px) and (min-height:720px){
-  .device{--status-h:42px;height:min(900px,94dvh);border-radius:56px;border:12px solid #13131c;
-    box-shadow:0 0 0 2px #2b2b3a,0 50px 100px rgba(0,0,0,.85),0 0 140px rgba(34,211,238,.07),inset 0 0 0 1px rgba(255,255,255,.06);}
+  .device{
+    height:min(920px,94dvh);
+    border-radius:58px;
+    border:14px solid #0d0d14;
+    box-shadow:
+      0 0 0 2px #24242f,
+      0 0 0 4px #050508,
+      0 60px 120px rgba(0,0,0,.9),
+      0 0 200px rgba(34,211,238,.06),
+      inset 0 0 0 1px rgba(255,255,255,.05);
+  }
   .island{display:block !important;}
 }
-.island{display:none;position:absolute;top:12px;left:50%;transform:translateX(-50%);width:112px;height:32px;background:#000;border-radius:20px;z-index:90;box-shadow:inset 0 0 0 1px rgba(255,255,255,.05);}
-.island::after{content:"";position:absolute;right:12px;top:50%;transform:translateY(-50%);width:9px;height:9px;border-radius:50%;background:radial-gradient(circle at 35% 35%,#1c2b3a,#050810);box-shadow:inset 0 0 2px rgba(80,180,255,.5);}
 
-.aurora{position:absolute;inset:0;overflow:hidden;pointer-events:none;z-index:0}
-.aurora i{position:absolute;display:block;border-radius:50%;filter:blur(72px);opacity:.42;animation:drift 22s ease-in-out infinite;}
-.aurora i:nth-child(1){width:300px;height:300px;background:#0ea5e9;top:-90px;left:-90px}
-.aurora i:nth-child(2){width:280px;height:280px;background:#a855f7;top:30%;right:-110px;animation-delay:-7s}
-.aurora i:nth-child(3){width:260px;height:260px;background:#ec4899;bottom:-90px;left:10%;animation-delay:-14s}
-@keyframes drift{0%,100%{transform:translate3d(0,0,0) scale(1)}33%{transform:translate3d(40px,-30px,0) scale(1.15)}66%{transform:translate3d(-30px,25px,0) scale(.92)}}
+/* Dynamic Island */
+.island{
+  display:none;
+  position:absolute;top:11px;left:50%;transform:translateX(-50%);
+  width:120px;height:34px;background:#000;border-radius:20px;
+  z-index:100;transition:all .5s var(--spring);
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.04);
+}
+.island::after{
+  content:"";position:absolute;right:13px;top:50%;transform:translateY(-50%);
+  width:10px;height:10px;border-radius:50%;
+  background:radial-gradient(circle at 30% 30%,#1e3348,#000 70%);
+  box-shadow:inset 0 0 3px rgba(80,180,255,.6);
+}
+.island.expanded{
+  width:230px;height:56px;border-radius:28px;
+}
 
-.view{position:absolute;inset:0;display:flex;flex-direction:column;padding-top:var(--status-h);
-  opacity:0;visibility:hidden;transform:scale(.965);
-  transition:opacity .34s ease,transform .42s cubic-bezier(.16,1,.3,1),visibility .34s;z-index:10;}
+/* ═══════════════════════════════════════════════════════════
+   WALLPAPERS
+   ═══════════════════════════════════════════════════════════ */
+.wall{
+  position:absolute;inset:0;z-index:0;overflow:hidden;
+  background:#04040a;
+}
+.wall::before{
+  content:"";position:absolute;inset:-10%;
+  background:
+    radial-gradient(circle at 22% 18%,rgba(168,85,247,.55),transparent 42%),
+    radial-gradient(circle at 78% 24%,rgba(34,211,238,.42),transparent 40%),
+    radial-gradient(circle at 55% 88%,rgba(236,72,153,.42),transparent 46%),
+    radial-gradient(circle at 12% 78%,rgba(59,130,246,.4),transparent 40%),
+    linear-gradient(170deg,#0a0a18,#04040a 75%);
+  filter:saturate(135%) blur(0.5px);
+  animation:meshDrift 26s ease-in-out infinite;
+}
+.wall::after{
+  content:"";position:absolute;inset:0;
+  background-image:
+    radial-gradient(circle at 50% 50%,transparent 55%,rgba(0,0,0,.55) 100%);
+  pointer-events:none;
+}
+@keyframes meshDrift{
+  0%,100%{transform:translate3d(0,0,0) scale(1.04)}
+  33%{transform:translate3d(24px,-18px,0) scale(1.08)}
+  66%{transform:translate3d(-18px,14px,0) scale(1.02)}
+}
+/* Film grain */
+.grain{
+  position:absolute;inset:0;z-index:2;pointer-events:none;opacity:.05;
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+  mix-blend-mode:overlay;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   STATUS BAR (no time / battery per request — decorative only)
+   ═══════════════════════════════════════════════════════════ */
+.status{
+  position:absolute;top:0;left:0;right:0;height:var(--status-h);
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 22px;z-index:120;pointer-events:none;
+  font-size:12px;font-weight:600;color:#fff;
+  text-shadow:0 1px 4px rgba(0,0,0,.6);
+  transition:color .3s ease;
+}
+.status.on-light{color:#04040a;text-shadow:none}
+.status .pill{
+  display:flex;align-items:center;gap:6px;
+  padding:3px 10px;border-radius:100px;
+  background:rgba(255,255,255,.08);
+  font-size:10px;font-weight:700;letter-spacing:.4px;
+  backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+  opacity:0;transition:opacity .4s ease;
+}
+.status .pill.show{opacity:1}
+.status .pill i{
+  width:5px;height:5px;border-radius:50%;background:var(--ok);
+  box-shadow:0 0 8px var(--ok);animation:pulse 1.6s ease-in-out infinite;
+}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(.8)}}
+
+/* ═══════════════════════════════════════════════════════════
+   VIEW SYSTEM
+   ═══════════════════════════════════════════════════════════ */
+.view{
+  position:absolute;inset:0;display:flex;flex-direction:column;
+  padding-top:var(--status-h);
+  opacity:0;visibility:hidden;transform:scale(.97);
+  transition:opacity .42s var(--ease),transform .55s var(--spring),visibility .42s;
+  z-index:10;
+}
 .view.active{opacity:1;visibility:visible;transform:scale(1);z-index:20}
-.scroll{flex:1;overflow-y:auto;overflow-x:hidden;padding:6px 18px calc(28px + var(--safe-b));-webkit-overflow-scrolling:touch;}
+.scroll{
+  flex:1;overflow-y:auto;overflow-x:hidden;
+  padding:8px 18px calc(30px + var(--safe-bot));
+  -webkit-overflow-scrolling:touch;
+}
 
-/* Boot */
-#view-boot{align-items:center;justify-content:center;background:radial-gradient(circle at 50% 42%,#101024 0%,#04040a 70%);}
-.boot-wrap{display:flex;flex-direction:column;align-items:center;gap:22px;margin-top:-40px}
-.boot-logo{width:104px;height:104px;border-radius:30px;position:relative;
-  background:linear-gradient(150deg,var(--acc),var(--acc2) 55%,var(--acc3));
-  display:flex;align-items:center;justify-content:center;font-size:46px;font-weight:800;color:#04040a;
-  box-shadow:0 0 60px rgba(34,211,238,.45),0 20px 50px rgba(0,0,0,.6);
-  animation:bootPop .9s cubic-bezier(.16,1.3,.3,1) both;}
-.boot-logo::before{content:"";position:absolute;inset:-14px;border-radius:40px;border:1.5px solid rgba(34,211,238,.35);animation:ring 2s ease-out infinite;}
-.boot-logo::after{content:"";position:absolute;inset:-14px;border-radius:40px;border:1.5px solid rgba(168,85,247,.3);animation:ring 2s ease-out infinite .7s;}
-@keyframes ring{0%{transform:scale(.85);opacity:.9}100%{transform:scale(1.35);opacity:0}}
-@keyframes bootPop{from{opacity:0;transform:scale(.6) rotate(-12deg)}to{opacity:1;transform:scale(1) rotate(0)}}
-.boot-name{font-size:26px;font-weight:800;letter-spacing:-.6px;background:linear-gradient(100deg,var(--acc),var(--acc2),var(--acc3));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;}
-.boot-sub{font-size:11px;color:var(--mut);letter-spacing:2px;text-transform:uppercase;font-weight:600}
-.boot-bar{width:150px;height:3px;border-radius:3px;background:rgba(255,255,255,.08);overflow:hidden}
-.boot-bar i{display:block;height:100%;width:0;border-radius:3px;background:linear-gradient(90deg,var(--acc),var(--acc3));animation:bootFill 1.7s cubic-bezier(.5,0,.2,1) forwards}
-@keyframes bootFill{to{width:100%}}
+/* ═══════════════════════════════════════════════════════════
+   BOOT SPLASH
+   ═══════════════════════════════════════════════════════════ */
+#view-boot{
+  align-items:center;justify-content:center;background:#000;
+  padding-top:0;
+}
+.boot{
+  display:flex;flex-direction:column;align-items:center;gap:44px;
+  transform:translateY(-30px);
+}
+.apple-ring{
+  position:relative;width:88px;height:88px;display:flex;align-items:center;justify-content:center;
+}
+.apple-ring svg.ring{
+  position:absolute;inset:0;width:100%;height:100%;
+  transform:rotate(-90deg);
+}
+.apple-ring svg.ring circle{
+  fill:none;stroke:#fff;stroke-width:2.5;stroke-linecap:round;
+  stroke-dasharray:276;stroke-dashoffset:276;
+  animation:ringFill 2.6s ease-out forwards;
+}
+@keyframes ringFill{to{stroke-dashoffset:0}}
+.apple-ring svg.apple{
+  width:34px;height:34px;fill:#fff;
+  filter:drop-shadow(0 0 14px rgba(255,255,255,.5));
+  animation:appleIn .9s var(--spring) both;
+}
+@keyframes appleIn{from{opacity:0;transform:scale(.6)}to{opacity:1;transform:scale(1)}}
+.boot-text{
+  font-size:11px;letter-spacing:3px;text-transform:uppercase;
+  color:var(--mut);font-weight:600;opacity:0;
+  animation:fadeUp .8s ease .5s forwards;
+}
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
 
-.card{background:linear-gradient(160deg,rgba(255,255,255,.055),rgba(255,255,255,.018));border:1px solid var(--stroke);border-radius:var(--radius);padding:16px;margin-bottom:14px;
-  backdrop-filter:blur(22px) saturate(150%);-webkit-backdrop-filter:blur(22px) saturate(150%);
-  box-shadow:0 10px 30px rgba(0,0,0,.28);position:relative;overflow:hidden;}
-.card-label{font-size:10px;font-weight:800;letter-spacing:1.4px;text-transform:uppercase;color:var(--mut-2);margin-bottom:12px}
-
-.hero{text-align:center;padding:14px 0 18px}
-.hero-badge{display:inline-block;font-size:9px;font-weight:800;letter-spacing:1.8px;padding:5px 12px;border-radius:100px;margin-bottom:14px;
-  color:#fca5a5;border:1px solid rgba(248,113,113,.35);background:linear-gradient(90deg,rgba(248,113,113,.14),rgba(251,191,36,.12));animation:pulseBadge 3s ease-in-out infinite;}
-@keyframes pulseBadge{0%,100%{opacity:.75}50%{opacity:1}}
-.hero-title{font-size:38px;font-weight:800;letter-spacing:-1.6px;line-height:1;
-  background:linear-gradient(100deg,var(--acc),var(--acc2) 50%,var(--acc3));background-size:200% auto;
-  -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;animation:shimmer 5s linear infinite;}
+/* ═══════════════════════════════════════════════════════════
+   LOCK / WELCOME SCREEN
+   ═══════════════════════════════════════════════════════════ */
+#view-lock{
+  align-items:center;justify-content:center;
+  padding-top:0;
+}
+.lock-content{
+  display:flex;flex-direction:column;align-items:center;gap:34px;
+  transform:translateY(-20px);padding:0 32px;
+  opacity:0;animation:fadeUp 1s ease .3s forwards;
+}
+.lock-mark{
+  width:80px;height:80px;border-radius:24px;
+  background:linear-gradient(150deg,var(--acc),var(--acc-2) 55%,var(--acc-3));
+  display:flex;align-items:center;justify-content:center;
+  font-size:38px;font-weight:800;color:#04040a;
+  box-shadow:0 0 60px rgba(34,211,238,.45),0 20px 40px rgba(0,0,0,.6);
+  position:relative;
+}
+.lock-mark::after{
+  content:"";position:absolute;inset:0;border-radius:24px;
+  background:linear-gradient(160deg,rgba(255,255,255,.4),transparent 50%);
+  pointer-events:none;
+}
+.lock-titles{text-align:center}
+.lock-title{
+  font-size:32px;font-weight:800;letter-spacing:-1px;
+  background:linear-gradient(100deg,var(--acc),var(--acc-2) 50%,var(--acc-3));
+  background-size:200% auto;-webkit-background-clip:text;background-clip:text;
+  -webkit-text-fill-color:transparent;
+  animation:shimmer 5s linear infinite;
+}
 @keyframes shimmer{to{background-position:200% center}}
-.hero-sub{font-size:10.5px;color:var(--mut);letter-spacing:1.6px;text-transform:uppercase;font-weight:600;margin-top:8px}
+.lock-sub{
+  font-size:10px;color:var(--mut);letter-spacing:2.4px;text-transform:uppercase;
+  font-weight:600;margin-top:9px;
+}
 
-.kv{display:flex;justify-content:space-between;align-items:center;padding:9px 0;font-size:13px;gap:10px}
-.kv + .kv{border-top:1px solid rgba(255,255,255,.045)}
-.kv-k{color:var(--mut);flex-shrink:0}
-.kv-v{font-weight:600;text-align:right;font-variant-numeric:tabular-nums;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:60%}
+/* Face ID scan */
+.faceid{
+  width:140px;height:140px;position:relative;
+  display:flex;align-items:center;justify-content:center;
+  border-radius:32px;
+  border:1.5px dashed rgba(255,255,255,.16);
+  transition:all .4s ease;
+}
+.faceid.scanning{
+  border-color:color-mix(in srgb,var(--acc) 60%,transparent);
+  box-shadow:0 0 40px color-mix(in srgb,var(--acc) 30%,transparent),inset 0 0 30px color-mix(in srgb,var(--acc) 12%,transparent);
+}
+.faceid svg{width:64px;height:64px;stroke:rgba(255,255,255,.85);fill:none;stroke-width:3;stroke-linecap:round;transition:.4s}
+.faceid.scanning svg{stroke:var(--acc)}
+.faceid.scanning svg path{animation:faceidDraw 1.4s ease-in-out infinite}
+.faceid.scanning svg path:nth-child(2){animation-delay:.15s}
+.faceid.scanning svg path:nth-child(3){animation-delay:.3s}
+.faceid.scanning svg path:nth-child(4){animation-delay:.45s}
+@keyframes faceidDraw{
+  0%,100%{opacity:.35}
+  50%{opacity:1;filter:drop-shadow(0 0 8px var(--acc))}
+}
+.faceid .scan-bar{
+  position:absolute;left:8px;right:8px;height:3px;border-radius:3px;
+  background:linear-gradient(90deg,transparent,var(--acc),transparent);
+  box-shadow:0 0 18px var(--acc);
+  opacity:0;top:10px;
+}
+.faceid.scanning .scan-bar{
+  opacity:1;animation:scanBar 1.8s ease-in-out infinite;
+}
+@keyframes scanBar{
+  0%,100%{top:10px;opacity:0}
+  20%{opacity:1}
+  80%{opacity:1}
+  0%{top:10px}
+  100%{top:calc(100% - 14px)}
+}
+.faceid.done{
+  border-color:color-mix(in srgb,var(--ok) 70%,transparent);
+  border-style:solid;
+  box-shadow:0 0 60px color-mix(in srgb,var(--ok) 45%,transparent);
+}
+.faceid.done svg{stroke:var(--ok)}
+
+.lock-hint{
+  font-size:12px;color:var(--mut);letter-spacing:1.5px;text-transform:uppercase;
+  font-weight:600;opacity:0;animation:fadeUp .8s ease 1.2s forwards;
+  cursor:pointer;padding:10px 22px;border-radius:100px;
+  border:1px solid var(--stroke);background:rgba(255,255,255,.03);
+  transition:.25s;
+}
+.lock-hint:active{transform:scale(.95);background:rgba(255,255,255,.08)}
+
+/* ═══════════════════════════════════════════════════════════
+   HOME / SPRINGBOARD
+   ═══════════════════════════════════════════════════════════ */
+#view-home{padding-top:0}
+.home{
+  flex:1;display:flex;flex-direction:column;
+  padding:calc(var(--status-h) + 16px) 20px calc(12px + var(--safe-bot));
+  overflow:hidden;position:relative;
+}
+
+/* Paged area */
+.pages{
+  flex:1;display:flex;overflow-x:auto;overflow-y:hidden;
+  scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;
+  scroll-behavior:smooth;
+}
+.pages::-webkit-scrollbar{display:none}
+.page{
+  min-width:100%;height:100%;
+  scroll-snap-align:start;
+  display:flex;flex-direction:column;gap:22px;
+  padding:6px 4px;
+}
+
+/* Widget cards */
+.widgets{
+  display:grid;grid-template-columns:1fr 1fr;gap:12px;
+}
+.widget{
+  background:linear-gradient(155deg,rgba(255,255,255,.09),rgba(255,255,255,.03));
+  border:1px solid var(--stroke);
+  border-radius:22px;padding:14px;
+  backdrop-filter:blur(24px) saturate(160%);
+  -webkit-backdrop-filter:blur(24px) saturate(160%);
+  box-shadow:0 8px 26px rgba(0,0,0,.28),inset 0 1px 0 rgba(255,255,255,.06);
+  position:relative;overflow:hidden;
+}
+.widget.wide{grid-column:span 2}
+.widget-label{
+  font-size:9px;font-weight:800;letter-spacing:1.6px;text-transform:uppercase;
+  color:var(--mut);margin-bottom:8px;display:flex;align-items:center;gap:6px;
+}
+.widget-label i{
+  width:6px;height:6px;border-radius:50%;background:var(--ok);
+  box-shadow:0 0 10px var(--ok);
+}
+.widget-value{font-size:24px;font-weight:800;letter-spacing:-.6px;font-variant-numeric:tabular-nums}
+.widget-value.sm{font-size:16px;letter-spacing:-.2px}
+.widget-sub{font-size:10.5px;color:var(--mut);margin-top:3px}
+.widget-spark{
+  height:32px;margin-top:8px;position:relative;
+}
+.widget-spark svg{width:100%;height:100%;overflow:visible}
+.widget-spark path{
+  fill:none;stroke:var(--acc);stroke-width:2;stroke-linecap:round;stroke-linejoin:round;
+  filter:drop-shadow(0 0 6px color-mix(in srgb,var(--acc) 60%,transparent));
+}
+.widget-weather{
+  display:flex;align-items:center;justify-content:space-between;
+}
+.widget-weather .ico{font-size:32px}
+
+/* App grid */
+.app-grid{
+  display:grid;grid-template-columns:repeat(4,1fr);
+  gap:20px 10px;padding:0 2px;
+}
+.app-btn{
+  display:flex;flex-direction:column;align-items:center;gap:7px;
+  animation:iconIn .55s var(--spring) both;
+}
+@keyframes iconIn{from{opacity:0;transform:translateY(18px) scale(.82)}to{opacity:1;transform:none}}
+.app-btn:active .icon{transform:scale(.86)}
+.icon{
+  width:60px;height:60px;border-radius:16px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:26px;font-weight:700;color:#fff;
+  background:linear-gradient(155deg,var(--c1),var(--c2));
+  box-shadow:
+    0 10px 22px rgba(0,0,0,.5),
+    inset 0 1px 0 rgba(255,255,255,.32),
+    inset 0 -1px 2px rgba(0,0,0,.15);
+  transition:transform .18s var(--spring);
+  position:relative;overflow:hidden;
+  font-family:-apple-system,sans-serif;
+}
+.icon::before{
+  content:"";position:absolute;inset:0;
+  background:linear-gradient(155deg,rgba(255,255,255,.35),transparent 55%);
+  pointer-events:none;border-radius:inherit;
+}
+.icon::after{
+  content:"";position:absolute;left:8px;right:8px;top:6px;height:36%;
+  background:linear-gradient(180deg,rgba(255,255,255,.28),transparent);
+  border-radius:12px 12px 50% 50%/12px 12px 100% 100%;
+  pointer-events:none;opacity:.7;
+}
+.icon.mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:20px;letter-spacing:-1px}
+.app-name{
+  font-size:10.5px;font-weight:500;color:rgba(255,255,255,.92);
+  text-shadow:0 1px 3px rgba(0,0,0,.7);letter-spacing:.1px;
+  max-width:74px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:center;
+}
+
+/* Page dots */
+.page-dots{
+  display:flex;justify-content:center;gap:7px;padding:14px 0 6px;
+}
+.page-dots span{
+  width:6px;height:6px;border-radius:50%;
+  background:rgba(255,255,255,.35);transition:.3s var(--spring);
+}
+.page-dots span.on{
+  background:#fff;width:20px;border-radius:3px;
+  box-shadow:0 0 10px rgba(255,255,255,.5);
+}
+
+/* Dock */
+.dock{
+  background:rgba(255,255,255,.1);
+  border:1px solid rgba(255,255,255,.15);
+  backdrop-filter:blur(30px) saturate(180%);
+  -webkit-backdrop-filter:blur(30px) saturate(180%);
+  border-radius:28px;padding:12px 8px;
+  display:grid;grid-template-columns:repeat(4,1fr);gap:6px;
+  box-shadow:0 12px 34px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,255,255,.12);
+}
+.dock .app-name{display:none}
+.dock .icon{width:56px;height:56px;font-size:24px;border-radius:15px}
+
+.home-indicator{
+  width:134px;height:5px;border-radius:5px;
+  background:rgba(255,255,255,.45);margin:12px auto 0;flex-shrink:0;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   APP CHROME
+   ═══════════════════════════════════════════════════════════ */
+.app-bar{
+  display:flex;align-items:center;gap:10px;
+  padding:4px 16px 14px;flex-shrink:0;
+}
+.back-btn{
+  width:36px;height:36px;border-radius:50%;
+  background:rgba(255,255,255,.07);border:1px solid var(--stroke);
+  display:flex;align-items:center;justify-content:center;
+  color:var(--txt);font-size:16px;transition:.2s;
+  backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+}
+.back-btn:active{transform:scale(.9);background:rgba(255,255,255,.14)}
+.app-bar h2{font-size:20px;font-weight:800;letter-spacing:-.6px}
+.spacer{flex:1}
+.app-bar .badge{
+  font-size:9.5px;font-weight:800;letter-spacing:.6px;
+  padding:4px 10px;border-radius:100px;
+  background:color-mix(in srgb,var(--ok) 15%,transparent);
+  color:var(--ok);border:1px solid color-mix(in srgb,var(--ok) 35%,transparent);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   EXPLOIT DASHBOARD
+   ═══════════════════════════════════════════════════════════ */
+.hero{
+  text-align:center;padding:14px 0 20px;
+  position:relative;
+}
+.hero-badge{
+  display:inline-flex;align-items:center;gap:7px;
+  font-size:9px;font-weight:800;letter-spacing:1.8px;
+  padding:6px 14px;border-radius:100px;margin-bottom:16px;
+  color:#fca5a5;border:1px solid rgba(248,113,113,.35);
+  background:linear-gradient(90deg,rgba(248,113,113,.14),rgba(251,191,36,.12));
+  animation:pulseBadge 3s ease-in-out infinite;
+}
+.hero-badge::before{
+  content:"";width:5px;height:5px;border-radius:50%;background:#fca5a5;
+  box-shadow:0 0 8px #fca5a5;
+}
+@keyframes pulseBadge{0%,100%{opacity:.8}50%{opacity:1}}
+.hero-title{
+  font-size:42px;font-weight:800;letter-spacing:-2px;line-height:1;
+  background:linear-gradient(100deg,var(--acc),var(--acc-2) 45%,var(--acc-3));
+  background-size:200% auto;
+  -webkit-background-clip:text;background-clip:text;
+  -webkit-text-fill-color:transparent;
+  animation:shimmer 5s linear infinite;
+}
+.hero-sub{
+  font-size:10.5px;color:var(--mut);letter-spacing:2px;
+  text-transform:uppercase;font-weight:600;margin-top:10px;
+}
+
+/* Glass card */
+.card{
+  background:linear-gradient(155deg,rgba(255,255,255,.055),rgba(255,255,255,.015));
+  border:1px solid var(--stroke);
+  border-radius:var(--radius);
+  padding:16px;
+  margin-bottom:14px;
+  backdrop-filter:blur(26px) saturate(160%);
+  -webkit-backdrop-filter:blur(26px) saturate(160%);
+  box-shadow:0 12px 34px rgba(0,0,0,.3),inset 0 1px 0 rgba(255,255,255,.05);
+  position:relative;overflow:hidden;
+}
+.card-label{
+  font-size:10px;font-weight:800;letter-spacing:1.4px;text-transform:uppercase;
+  color:var(--mut-2);margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;
+}
+.card-label .tag{
+  font-size:9px;letter-spacing:.5px;padding:3px 8px;border-radius:100px;
+  background:rgba(255,255,255,.06);color:var(--mut);font-weight:700;
+  border:1px solid var(--stroke);
+}
+/* Scanline on fingerprint card */
+.scan{
+  position:absolute;left:0;right:0;height:88px;pointer-events:none;
+  background:linear-gradient(180deg,transparent,rgba(34,211,238,.14),transparent);
+  animation:scanMove 4s linear infinite;
+}
+@keyframes scanMove{0%{top:-88px}100%{top:100%}}
+
+/* Key/value rows */
+.kv{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:10px 0;font-size:13px;gap:10px;
+}
+.kv+.kv{border-top:1px solid rgba(255,255,255,.045)}
+.kv-k{color:var(--mut);flex-shrink:0;display:flex;align-items:center;gap:7px}
+.kv-k::before{
+  content:"";width:3px;height:3px;border-radius:50%;background:var(--mut-2);
+}
+.kv-v{
+  font-weight:600;text-align:right;font-variant-numeric:tabular-nums;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:58%;
+}
 .c-acc{color:var(--acc)}.c-ok{color:var(--ok)}.c-warn{color:var(--warn)}.c-err{color:var(--err)}
 
-.scanline{position:absolute;left:0;right:0;height:70px;pointer-events:none;
-  background:linear-gradient(180deg,transparent,rgba(34,211,238,.14),transparent);animation:scan 3.4s linear infinite;}
-@keyframes scan{0%{top:-70px}100%{top:100%}}
-
+/* Chips */
 .chips{display:flex;flex-wrap:wrap;gap:7px}
-.chip{font-size:11px;font-weight:700;padding:7px 12px;border-radius:100px;background:rgba(255,255,255,.045);border:1px solid var(--stroke);color:var(--mut);transition:.22s;}
-.chip.on{color:var(--acc);border-color:color-mix(in srgb,var(--acc) 45%,transparent);background:color-mix(in srgb,var(--acc) 12%,transparent);box-shadow:0 0 16px color-mix(in srgb,var(--acc) 25%,transparent);}
+.chip{
+  font-size:11px;font-weight:700;padding:8px 13px;border-radius:100px;
+  background:rgba(255,255,255,.045);border:1px solid var(--stroke);
+  color:var(--mut);transition:.25s var(--spring);
+}
+.chip:active{transform:scale(.94)}
+.chip.on{
+  color:var(--acc);border-color:color-mix(in srgb,var(--acc) 45%,transparent);
+  background:color-mix(in srgb,var(--acc) 12%,transparent);
+  box-shadow:0 0 18px color-mix(in srgb,var(--acc) 22%,transparent);
+}
 
-.row{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:12px 0}
-.row + .row{border-top:1px solid rgba(255,255,255,.045)}
+/* Switch rows */
+.row{
+  display:flex;align-items:center;justify-content:space-between;gap:14px;
+  padding:13px 0;
+}
+.row+.row{border-top:1px solid rgba(255,255,255,.045)}
 .row-t{font-size:13.5px;font-weight:600}
-.row-d{font-size:11px;color:var(--mut);margin-top:2px;line-height:1.35}
-.sw{width:47px;height:28px;border-radius:100px;background:rgba(255,255,255,.11);position:relative;flex-shrink:0;transition:background .28s cubic-bezier(.4,0,.2,1);}
-.sw::after{content:"";position:absolute;top:2.5px;left:2.5px;width:23px;height:23px;border-radius:50%;background:#fff;box-shadow:0 2px 6px rgba(0,0,0,.45);transition:transform .28s cubic-bezier(.4,0,.2,1);}
+.row-d{font-size:11px;color:var(--mut);margin-top:2px;line-height:1.4}
+.sw{
+  width:48px;height:29px;border-radius:100px;
+  background:rgba(255,255,255,.12);position:relative;
+  flex-shrink:0;transition:background .28s var(--ease);
+}
+.sw::after{
+  content:"";position:absolute;top:2.5px;left:2.5px;
+  width:24px;height:24px;border-radius:50%;
+  background:#fff;box-shadow:0 2px 8px rgba(0,0,0,.5),0 0 0 1px rgba(0,0,0,.04);
+  transition:transform .3s var(--spring);
+}
 .sw.on{background:var(--acc)}
 .sw.on::after{transform:translateX(19px)}
 
-.jb-btn{position:relative;width:100%;height:60px;border-radius:18px;overflow:hidden;margin:4px 0 14px;
-  background:linear-gradient(135deg,var(--acc),var(--acc2));color:#04040a;font-size:16px;font-weight:800;letter-spacing:.3px;
-  box-shadow:0 12px 34px color-mix(in srgb,var(--acc) 32%,transparent),inset 0 1px 0 rgba(255,255,255,.4);
-  transition:transform .16s ease,box-shadow .3s ease,filter .3s;}
+/* Jailbreak button */
+.jb-btn{
+  position:relative;width:100%;height:62px;border-radius:20px;
+  overflow:hidden;margin:6px 0 16px;
+  background:linear-gradient(135deg,var(--acc),var(--acc-2));
+  color:#04040a;font-size:16px;font-weight:800;letter-spacing:.3px;
+  box-shadow:
+    0 14px 38px color-mix(in srgb,var(--acc) 35%,transparent),
+    inset 0 1.5px 0 rgba(255,255,255,.45),
+    inset 0 -2px 0 rgba(0,0,0,.12);
+  transition:transform .16s var(--spring),box-shadow .3s;
+  isolation:isolate;
+}
+.jb-btn::before{
+  content:"";position:absolute;inset:0;
+  background:radial-gradient(circle at 30% 20%,rgba(255,255,255,.35),transparent 55%);
+  opacity:.7;pointer-events:none;
+}
+.jb-btn::after{
+  content:"";position:absolute;left:-100%;top:0;bottom:0;width:60%;
+  background:linear-gradient(100deg,transparent,rgba(255,255,255,.45),transparent);
+  transform:skewX(-20deg);
+  animation:btnSheen 3.5s ease-in-out infinite;
+}
+@keyframes btnSheen{0%,60%{left:-100%}100%{left:160%}}
 .jb-btn:active{transform:scale(.975)}
 .jb-btn:disabled{cursor:default}
-.jb-btn.busy{filter:saturate(.7) brightness(.85)}
-.jb-fill{position:absolute;inset:0;width:0%;background:linear-gradient(90deg,rgba(255,255,255,.55),rgba(255,255,255,.15));transition:width .3s cubic-bezier(.4,0,.2,1);}
-.jb-label{position:relative;z-index:2;display:flex;align-items:center;justify-content:center;gap:9px}
-.spinner{width:15px;height:15px;border-radius:50%;border:2.2px solid rgba(0,0,0,.22);border-top-color:#04040a;animation:spin .7s linear infinite;display:none;}
+.jb-btn.busy{filter:saturate(.75) brightness(.9)}
+.jb-fill{
+  position:absolute;inset:0;width:0%;
+  background:linear-gradient(90deg,rgba(255,255,255,.6),rgba(255,255,255,.2));
+  transition:width .35s var(--ease);
+}
+.jb-label{
+  position:relative;z-index:2;display:flex;align-items:center;
+  justify-content:center;gap:9px;height:100%;
+}
+.spinner{
+  width:16px;height:16px;border-radius:50%;
+  border:2.2px solid rgba(0,0,0,.22);border-top-color:#04040a;
+  animation:spin .7s linear infinite;display:none;
+}
 .jb-btn.busy .spinner{display:block}
 @keyframes spin{to{transform:rotate(360deg)}}
 
-.stage-row{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px;font-size:11px}
+/* Progress */
+.stage-row{
+  display:flex;justify-content:space-between;align-items:baseline;
+  margin-bottom:8px;font-size:11px;
+}
 .stage-name{font-weight:700;color:var(--acc);letter-spacing:.3px}
 .stage-pct{font-variant-numeric:tabular-nums;color:var(--mut);font-weight:700}
-.track{height:5px;border-radius:5px;background:rgba(255,255,255,.07);overflow:hidden;margin-bottom:16px}
-.track i{display:block;height:100%;width:0;border-radius:5px;
-  background:linear-gradient(90deg,var(--acc),var(--acc2),var(--acc3));background-size:200% auto;
-  transition:width .35s cubic-bezier(.4,0,.2,1);box-shadow:0 0 14px color-mix(in srgb,var(--acc) 60%,transparent);animation:shimmer 2s linear infinite;}
+.track{
+  height:5px;border-radius:5px;background:rgba(255,255,255,.07);
+  overflow:hidden;margin-bottom:16px;
+  box-shadow:inset 0 1px 2px rgba(0,0,0,.3);
+}
+.track i{
+  display:block;height:100%;width:0;border-radius:5px;
+  background:linear-gradient(90deg,var(--acc),var(--acc-2),var(--acc-3));
+  background-size:200% auto;
+  transition:width .35s var(--ease);
+  box-shadow:0 0 16px color-mix(in srgb,var(--acc) 65%,transparent);
+  animation:shimmer 2.2s linear infinite;
+}
 
-.term{background:#000;border:1px solid rgba(255,255,255,.11);border-radius:15px;padding:12px 13px;height:186px;overflow-y:auto;
-  font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono",monospace;font-size:10.5px;line-height:1.55;
-  display:flex;flex-direction:column;gap:1px;scroll-behavior:smooth;}
-.tl{word-break:break-word;color:#7dd3fc;animation:fadeIn .25s ease both}
-.tl.ok{color:var(--ok)}.tl.warn{color:var(--warn)}.tl.err{color:var(--err)}.tl.dim{color:var(--mut-2)}.tl.hi{color:#fff}
+/* Terminal / log */
+.term{
+  background:#000;border:1px solid rgba(255,255,255,.1);
+  border-radius:15px;padding:12px 13px;height:200px;overflow-y:auto;
+  font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;
+  font-size:10.5px;line-height:1.6;
+  display:flex;flex-direction:column;gap:1px;scroll-behavior:smooth;
+  position:relative;
+}
+.term::before{
+  content:"";position:absolute;inset:0;pointer-events:none;border-radius:inherit;
+  background:linear-gradient(180deg,rgba(34,211,238,.03),transparent 30%,transparent 70%,rgba(168,85,247,.04));
+}
+.tl{word-break:break-word;color:#7dd3fc;animation:fadeIn .3s ease both;position:relative}
+.tl::before{content:">";color:rgba(125,211,252,.3);margin-right:6px}
+.tl.ok{color:var(--ok)}
+.tl.ok::before{content:"✓";color:var(--ok)}
+.tl.warn{color:var(--warn)}
+.tl.warn::before{content:"!";color:var(--warn)}
+.tl.err{color:var(--err)}
+.tl.err::before{content:"✕";color:var(--err)}
+.tl.dim{color:var(--mut-2)}
+.tl.dim::before{content:"·";color:var(--mut-2)}
+.tl.hi{color:#fff}
+.tl.hi::before{content:"»";color:#fff}
 @keyframes fadeIn{from{opacity:0;transform:translateY(3px)}to{opacity:1;transform:none}}
 
-#view-home{padding-top:0}
-.wallpaper{position:absolute;inset:0;z-index:-1;
-  background:radial-gradient(circle at 22% 12%,rgba(168,85,247,.5),transparent 46%),
-             radial-gradient(circle at 82% 26%,rgba(34,211,238,.42),transparent 48%),
-             radial-gradient(circle at 50% 92%,rgba(236,72,153,.4),transparent 52%),
-             linear-gradient(170deg,#0a0a18,#04040a 70%);
-  filter:saturate(130%);}
-.home-body{flex:1;display:flex;flex-direction:column;padding:calc(var(--status-h) + 24px) 22px calc(14px + var(--safe-b));overflow-y:auto;}
-.home-status{text-align:center;margin-bottom:30px;font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;
-  color:var(--ok);opacity:.9;display:flex;align-items:center;justify-content:center;gap:7px;}
-.dot-live{width:7px;height:7px;border-radius:50%;background:var(--ok);box-shadow:0 0 10px var(--ok);animation:livePulse 1.8s ease-in-out infinite;}
-@keyframes livePulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(.8)}}
-
-.app-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:18px 8px}
-.app{display:flex;flex-direction:column;align-items:center;gap:7px;animation:iconIn .5s cubic-bezier(.16,1.2,.3,1) both;}
-@keyframes iconIn{from{opacity:0;transform:translateY(14px) scale(.8)}to{opacity:1;transform:none}}
-.app:active .tile{transform:scale(.88)}
-.tile{width:58px;height:58px;border-radius:15px;display:flex;align-items:center;justify-content:center;font-size:25px;font-weight:700;
-  background:linear-gradient(150deg,var(--c1),var(--c2));
-  box-shadow:0 8px 20px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.28);
-  transition:transform .16s cubic-bezier(.4,0,.2,1);position:relative;overflow:hidden;color:#fff;}
-.tile::after{content:"";position:absolute;inset:0;background:linear-gradient(160deg,rgba(255,255,255,.3),transparent 55%);pointer-events:none;}
-.app-name{font-size:10px;font-weight:500;color:rgba(255,255,255,.9);text-shadow:0 1px 3px rgba(0,0,0,.7);}
-.dock{margin-top:auto;padding-top:24px}
-.dock-inner{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.14);
-  backdrop-filter:blur(26px) saturate(160%);-webkit-backdrop-filter:blur(26px) saturate(160%);
-  border-radius:26px;padding:12px 10px;display:grid;grid-template-columns:repeat(4,1fr);gap:8px;}
-.dock .app-name{display:none}
-.home-indicator{width:130px;height:5px;border-radius:5px;background:rgba(255,255,255,.42);margin:14px auto 6px;flex-shrink:0;}
-
-.app-bar{display:flex;align-items:center;gap:10px;padding:4px 16px 12px;flex-shrink:0}
-.back-btn{width:34px;height:34px;border-radius:50%;background:rgba(255,255,255,.08);border:1px solid var(--stroke);
-  display:flex;align-items:center;justify-content:center;font-size:15px;color:var(--mut);transition:.2s;flex-shrink:0;}
-.back-btn:active{transform:scale(.9);background:rgba(255,255,255,.14)}
-.app-bar h2{font-size:19px;font-weight:800;letter-spacing:-.5px}
-.app-bar .spacer{flex:1}
-
+/* ═══════════════════════════════════════════════════════════
+   SILEO
+   ═══════════════════════════════════════════════════════════ */
 .sileo-head{padding:0 16px 10px;flex-shrink:0}
-.sileo-title{font-size:30px;font-weight:800;letter-spacing:-1.2px}
-.sileo-sub{font-size:10.5px;color:var(--ok);font-weight:700;margin-top:3px;display:flex;align-items:center;gap:6px}
-.search{margin-top:12px;display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.06);border:1px solid var(--stroke);border-radius:12px;padding:9px 12px;}
-.search input{flex:1;background:none;border:none;outline:none;color:var(--txt);font-size:13px}
+.sileo-title{font-size:32px;font-weight:800;letter-spacing:-1.4px}
+.sileo-sub{
+  font-size:10.5px;color:var(--ok);font-weight:700;
+  margin-top:4px;display:flex;align-items:center;gap:7px;
+}
+.sileo-sub i{
+  width:6px;height:6px;border-radius:50%;background:var(--ok);
+  box-shadow:0 0 10px var(--ok);animation:pulse 1.6s ease-in-out infinite;
+}
+.search{
+  margin-top:14px;display:flex;align-items:center;gap:9px;
+  background:rgba(255,255,255,.06);border:1px solid var(--stroke);
+  border-radius:13px;padding:10px 13px;
+  backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+}
+.search svg{width:15px;height:15px;stroke:var(--mut-2);fill:none;stroke-width:2}
+.search input{
+  flex:1;background:none;border:none;outline:none;color:var(--txt);font-size:13.5px;
+}
 .search input::placeholder{color:var(--mut-2)}
-.tabs{display:flex;gap:4px;padding:0 16px 12px;flex-shrink:0}
-.tab{flex:1;padding:8px 4px;border-radius:11px;font-size:11px;font-weight:700;color:var(--mut);transition:.2s;text-align:center}
-.tab.on{background:rgba(255,255,255,.09);color:#fff;box-shadow:0 4px 14px rgba(0,0,0,.3)}
-.pane{display:none;flex-direction:column;gap:9px}
-.pane.on{display:flex}
-.pkg{display:flex;align-items:center;gap:12px;background:linear-gradient(160deg,rgba(255,255,255,.05),rgba(255,255,255,.015));
-  border:1px solid var(--stroke);border-radius:16px;padding:12px;animation:fadeIn .3s ease both;}
-.pkg-ico{width:42px;height:42px;border-radius:12px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:20px;
-  background:linear-gradient(150deg,rgba(255,255,255,.13),rgba(255,255,255,.04));border:1px solid var(--stroke);}
+.tabs{
+  display:flex;gap:4px;padding:0 16px 12px;flex-shrink:0;
+  background:linear-gradient(180deg,transparent,rgba(255,255,255,.02));
+}
+.tab{
+  flex:1;padding:9px 4px;border-radius:12px;font-size:11px;font-weight:700;
+  color:var(--mut);transition:.25s var(--ease);text-align:center;
+}
+.tab.on{
+  background:rgba(255,255,255,.09);color:#fff;
+  box-shadow:0 4px 16px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,255,255,.08);
+}
+.pane{display:none;flex-direction:column;gap:10px}
+.pane.on{display:flex;animation:fadeUp .35s ease}
+
+/* Package cell */
+.pkg{
+  display:flex;align-items:center;gap:12px;
+  background:linear-gradient(155deg,rgba(255,255,255,.05),rgba(255,255,255,.015));
+  border:1px solid var(--stroke);border-radius:16px;padding:13px;
+  animation:fadeIn .35s ease both;
+  transition:.25s var(--ease);
+}
+.pkg:active{transform:scale(.985);background:rgba(255,255,255,.08)}
+.pkg-ico{
+  width:46px;height:46px;border-radius:13px;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;font-size:22px;
+  background:linear-gradient(150deg,rgba(255,255,255,.14),rgba(255,255,255,.04));
+  border:1px solid var(--stroke-2);
+  position:relative;overflow:hidden;
+}
+.pkg-ico::before{
+  content:"";position:absolute;inset:0;
+  background:linear-gradient(155deg,rgba(255,255,255,.25),transparent 55%);
+}
 .pkg-info{flex:1;min-width:0}
-.pkg-name{font-size:13.5px;font-weight:700;display:flex;align-items:center;gap:6px}
-.pkg-ver{font-size:9px;color:var(--mut-2);font-weight:600;background:rgba(255,255,255,.06);padding:1px 6px;border-radius:5px}
-.pkg-desc{font-size:11px;color:var(--mut);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pkg-name{
+  font-size:13.5px;font-weight:700;
+  display:flex;align-items:center;gap:7px;
+}
+.pkg-ver{
+  font-size:9px;color:var(--mut-2);font-weight:600;
+  background:rgba(255,255,255,.06);padding:2px 6px;border-radius:5px;
+}
+.pkg-desc{
+  font-size:11px;color:var(--mut);margin-top:2px;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
 .pkg-meta{font-size:9.5px;color:var(--mut-2);margin-top:3px}
-.ibtn{padding:7px 15px;border-radius:100px;font-size:11px;font-weight:800;border:1px solid color-mix(in srgb,var(--acc) 35%,transparent);
-  background:color-mix(in srgb,var(--acc) 13%,transparent);color:var(--acc);transition:.2s;flex-shrink:0;white-space:nowrap;}
+.ibtn{
+  padding:8px 16px;border-radius:100px;font-size:11px;font-weight:800;
+  border:1px solid color-mix(in srgb,var(--acc) 40%,transparent);
+  background:color-mix(in srgb,var(--acc) 14%,transparent);
+  color:var(--acc);transition:.22s var(--ease);flex-shrink:0;white-space:nowrap;
+}
 .ibtn:active{transform:scale(.93)}
-.ibtn.done{color:var(--ok);border-color:rgba(52,211,153,.35);background:rgba(52,211,153,.12)}
-.ibtn.busy{color:var(--warn);border-color:rgba(251,191,36,.35);background:rgba(251,191,36,.12);pointer-events:none}
-.ibtn.remove{color:var(--err);border-color:rgba(248,113,113,.3);background:rgba(248,113,113,.1)}
-.repo{display:flex;align-items:center;justify-content:space-between;gap:10px;background:rgba(255,255,255,.04);border:1px solid var(--stroke);border-radius:14px;padding:13px;}
+.ibtn.done{
+  color:var(--ok);border-color:rgba(52,211,153,.4);
+  background:rgba(52,211,153,.12);
+}
+.ibtn.busy{
+  color:var(--warn);border-color:rgba(251,191,36,.4);
+  background:rgba(251,191,36,.12);pointer-events:none;
+}
+.ibtn.remove{
+  color:var(--err);border-color:rgba(248,113,113,.3);
+  background:rgba(248,113,113,.1);
+}
+.repo{
+  display:flex;align-items:center;justify-content:space-between;gap:10px;
+  background:rgba(255,255,255,.04);border:1px solid var(--stroke);
+  border-radius:14px;padding:14px;
+}
 .repo h4{font-size:13px;font-weight:700}
 .repo p{font-size:10.5px;color:var(--mut-2);font-family:ui-monospace,monospace;margin-top:2px}
-.verified{font-size:9.5px;font-weight:800;color:var(--ok);letter-spacing:.5px}
+.verified{
+  font-size:9.5px;font-weight:800;color:var(--ok);letter-spacing:.5px;
+}
 
+/* ═══════════════════════════════════════════════════════════
+   TERMINAL APP
+   ═══════════════════════════════════════════════════════════ */
 #view-terminal{padding-top:var(--status-h)}
-.term-full{flex:1;display:flex;flex-direction:column;background:#000;
-  font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;font-size:11.5px;overflow:hidden;
-  margin:0 10px 10px;border-radius:14px;border:1px solid rgba(255,255,255,.1);}
-.term-out{flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:2px;line-height:1.55}
-.term-in-row{display:flex;align-items:center;gap:7px;padding:9px 12px;border-top:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.02);}
-.term-in-row .ps1{color:var(--ok);font-weight:700;flex-shrink:0}
-.term-in-row input{flex:1;background:none;border:none;outline:none;color:#fff;font-family:inherit;font-size:11.5px;caret-color:var(--acc);}
-.o-cmd{color:#fff}.o-err{color:var(--err)}.o-ok{color:var(--ok)}.o-dim{color:var(--mut-2)}.o-acc{color:var(--acc)}
+.term-full{
+  flex:1;display:flex;flex-direction:column;background:#000;
+  font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;
+  font-size:11.5px;overflow:hidden;margin:0 10px 10px;
+  border-radius:14px;border:1px solid rgba(255,255,255,.1);
+  position:relative;
+}
+.term-full::before{
+  content:"";position:absolute;inset:0;pointer-events:none;border-radius:inherit;
+  background:linear-gradient(180deg,rgba(34,211,238,.04),transparent 25%,transparent 75%,rgba(168,85,247,.05));
+}
+.term-out{
+  flex:1;overflow-y:auto;padding:14px;
+  display:flex;flex-direction:column;gap:3px;line-height:1.55;
+  position:relative;
+}
+.term-in-row{
+  display:flex;align-items:center;gap:8px;padding:11px 14px;
+  border-top:1px solid rgba(255,255,255,.1);
+  background:rgba(255,255,255,.02);
+}
+.term-in-row .ps1{color:var(--ok);font-weight:700;flex-shrink:0;font-size:11.5px}
+.term-in-row input{
+  flex:1;background:none;border:none;outline:none;color:#fff;
+  font-family:inherit;font-size:11.5px;caret-color:var(--acc);
+}
+.o-cmd{color:#fff}
+.o-err{color:var(--err)}
+.o-ok{color:var(--ok)}
+.o-dim{color:var(--mut-2)}
+.o-acc{color:var(--acc)}
+.o-warn{color:var(--warn)}
 
-.file-row{display:flex;align-items:center;gap:12px;padding:13px 14px;background:rgba(255,255,255,.04);border:1px solid var(--stroke);border-radius:14px;transition:.18s;}
-.file-row:active{background:rgba(255,255,255,.09)}
-.file-ico{font-size:18px;width:26px;text-align:center}
-.file-name{font-size:13px;font-weight:600;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.file-chev{color:var(--mut-2);font-size:13px}
-.crumb{font-family:ui-monospace,monospace;font-size:11px;color:var(--acc);padding:8px 12px;background:rgba(255,255,255,.04);border-radius:10px;margin-bottom:12px;border:1px solid var(--stroke);}
+/* ═══════════════════════════════════════════════════════════
+   FILES
+   ═══════════════════════════════════════════════════════════ */
+.file-row{
+  display:flex;align-items:center;gap:12px;padding:14px;
+  background:rgba(255,255,255,.04);border:1px solid var(--stroke);
+  border-radius:14px;transition:.2s var(--ease);
+}
+.file-row:active{background:rgba(255,255,255,.09);transform:scale(.99)}
+.file-ico{font-size:19px;width:28px;text-align:center}
+.file-name{
+  font-size:13px;font-weight:600;flex:1;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+.file-chev{color:var(--mut-2);font-size:14px}
+.crumb{
+  font-family:ui-monospace,monospace;font-size:11px;color:var(--acc);
+  padding:9px 13px;background:rgba(255,255,255,.04);
+  border-radius:11px;margin-bottom:12px;border:1px solid var(--stroke);
+  overflow-x:auto;white-space:nowrap;
+}
 
-#respring{position:absolute;inset:0;background:#000;z-index:200;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:36px;
-  opacity:0;visibility:hidden;transition:opacity .45s ease,visibility .45s;}
+/* ═══════════════════════════════════════════════════════════
+   CONTROL CENTER
+   ═══════════════════════════════════════════════════════════ */
+#cc{
+  position:absolute;inset:0;z-index:150;
+  background:rgba(10,10,18,.35);
+  backdrop-filter:blur(30px) saturate(150%);
+  -webkit-backdrop-filter:blur(30px) saturate(150%);
+  opacity:0;visibility:hidden;
+  transition:opacity .35s ease,visibility .35s;
+  padding:var(--status-h) 16px calc(20px + var(--safe-bot));
+  display:flex;flex-direction:column;gap:12px;overflow-y:auto;
+}
+#cc.on{opacity:1;visibility:visible}
+.cc-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.cc-tile{
+  background:rgba(255,255,255,.08);border:1px solid var(--stroke);
+  border-radius:22px;padding:16px;
+  backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+  display:flex;align-items:center;gap:12px;
+  transition:.22s var(--spring);
+  box-shadow:0 8px 24px rgba(0,0,0,.25),inset 0 1px 0 rgba(255,255,255,.06);
+}
+.cc-tile:active{transform:scale(.96)}
+.cc-tile.on{background:color-mix(in srgb,var(--acc) 85%,transparent);color:#04040a}
+.cc-tile.wide{grid-column:span 2}
+.cc-ico{
+  width:40px;height:40px;border-radius:14px;flex-shrink:0;
+  background:rgba(255,255,255,.15);
+  display:flex;align-items:center;justify-content:center;
+  font-size:19px;
+}
+.cc-tile.on .cc-ico{background:rgba(0,0,0,.14)}
+.cc-lbl{font-size:13px;font-weight:700}
+.cc-sub{font-size:10px;color:rgba(255,255,255,.55);margin-top:2px}
+.cc-tile.on .cc-sub{color:rgba(0,0,0,.55)}
+.cc-title{
+  text-align:center;font-size:11px;color:var(--mut);
+  letter-spacing:2px;text-transform:uppercase;font-weight:700;
+  margin-bottom:8px;
+}
+
+/* Brightness / volume sliders */
+.cc-slider{
+  grid-column:span 2;
+  background:rgba(255,255,255,.08);border:1px solid var(--stroke);
+  border-radius:22px;padding:14px 16px;
+  display:flex;align-items:center;gap:12px;
+}
+.cc-slider .track-slider{
+  flex:1;height:32px;border-radius:14px;
+  background:rgba(0,0,0,.35);position:relative;overflow:hidden;
+}
+.cc-slider .fill{
+  position:absolute;left:0;top:0;bottom:0;
+  background:linear-gradient(90deg,#fff,#c7c7c7);
+  transition:width .1s linear;
+}
+.cc-slider .ico{font-size:18px;color:#fff;width:20px;text-align:center}
+
+/* ═══════════════════════════════════════════════════════════
+   RESPIRING OVERLAY
+   ═══════════════════════════════════════════════════════════ */
+#respring{
+  position:absolute;inset:0;background:#000;z-index:500;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:40px;
+  opacity:0;visibility:hidden;
+  transition:opacity .45s ease,visibility .45s;
+}
 #respring.on{opacity:1;visibility:visible}
-#respring svg{width:62px;height:62px;fill:#fff;animation:applePulse 1.5s ease-in-out infinite}
-@keyframes applePulse{0%,100%{opacity:.45;transform:scale(.94)}50%{opacity:1;transform:scale(1.04)}}
-.rs-bar{width:150px;height:4px;border-radius:4px;background:rgba(255,255,255,.14);overflow:hidden}
-.rs-bar i{display:block;height:100%;width:0;background:#fff;border-radius:4px;transition:width .3s linear}
-.rs-text{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--mut-2);font-weight:700}
+.rs-ring{position:relative;width:88px;height:88px;display:flex;align-items:center;justify-content:center}
+.rs-ring svg.ring{position:absolute;inset:0;transform:rotate(-90deg)}
+.rs-ring svg.ring circle{
+  fill:none;stroke:#fff;stroke-width:2;stroke-linecap:round;
+  stroke-dasharray:276;stroke-dashoffset:276;
+  transition:stroke-dashoffset .1s linear;
+}
+.rs-ring svg.apple{
+  width:32px;height:32px;fill:#fff;
+  animation:applePulse 1.5s ease-in-out infinite;
+}
+@keyframes applePulse{0%,100%{opacity:.5;transform:scale(.94)}50%{opacity:1;transform:scale(1.04)}}
+.rs-text{
+  font-size:10px;letter-spacing:3px;text-transform:uppercase;
+  color:var(--mut);font-weight:700;
+}
 
-#toasts{position:absolute;left:0;right:0;bottom:calc(24px + var(--safe-b));z-index:300;display:flex;flex-direction:column;align-items:center;gap:8px;pointer-events:none;padding:0 20px;}
-.toast{max-width:100%;background:rgba(24,24,36,.9);border:1px solid rgba(255,255,255,.16);
-  backdrop-filter:blur(24px) saturate(160%);-webkit-backdrop-filter:blur(24px) saturate(160%);
-  padding:11px 18px;border-radius:100px;font-size:12.5px;font-weight:600;
-  box-shadow:0 12px 34px rgba(0,0,0,.6);opacity:0;transform:translateY(16px) scale(.94);
-  transition:opacity .3s ease,transform .38s cubic-bezier(.16,1.3,.3,1);
-  display:flex;align-items:center;gap:9px;white-space:nowrap;}
+/* ═══════════════════════════════════════════════════════════
+   TOASTS
+   ═══════════════════════════════════════════════════════════ */
+#toasts{
+  position:absolute;left:0;right:0;bottom:calc(30px + var(--safe-bot));
+  z-index:600;display:flex;flex-direction:column;align-items:center;gap:8px;
+  pointer-events:none;padding:0 20px;
+}
+.toast{
+  max-width:100%;background:rgba(28,28,42,.85);
+  border:1px solid var(--stroke-2);
+  backdrop-filter:blur(28px) saturate(170%);
+  -webkit-backdrop-filter:blur(28px) saturate(170%);
+  padding:12px 20px;border-radius:100px;
+  font-size:13px;font-weight:600;color:#fff;
+  box-shadow:0 16px 40px rgba(0,0,0,.65),inset 0 1px 0 rgba(255,255,255,.1);
+  opacity:0;transform:translateY(20px) scale(.92);
+  transition:opacity .3s ease,transform .45s var(--spring);
+  display:flex;align-items:center;gap:10px;white-space:nowrap;
+}
 .toast.show{opacity:1;transform:none}
-.toast::before{content:"●";font-size:9px;color:var(--acc)}
-.toast.ok::before{color:var(--ok)}
-.toast.err::before{color:var(--err)}
-.toast.warn::before{color:var(--warn)}
+.toast::before{
+  content:"";width:7px;height:7px;border-radius:50%;
+  background:var(--acc);box-shadow:0 0 10px var(--acc);
+}
+.toast.ok::before{background:var(--ok);box-shadow:0 0 10px var(--ok)}
+.toast.err::before{background:var(--err);box-shadow:0 0 10px var(--err)}
+.toast.warn::before{background:var(--warn);box-shadow:0 0 10px var(--warn)}
+
+/* Utility */
+.hidden{display:none!important}
 </style>
 </head>
 <body>
 
 <div class="device" id="device">
-  <div class="island"></div>
-  <div class="aurora"><i></i><i></i><i></i></div>
 
-  <!-- BOOT -->
+  <!-- Dynamic Island -->
+  <div class="island" id="island"></div>
+
+  <!-- Wallpaper -->
+  <div class="wall"><div class="grain"></div></div>
+
+  <!-- Status bar (empty per request — no time / battery) -->
+  <div class="status">
+    <div></div>
+    <div class="pill" id="sbPill"><i></i><span id="sbPillText">Jailbroken</span></div>
+  </div>
+
+  <!-- ═══════════════ BOOT ═══════════════ -->
   <section class="view active" id="view-boot">
-    <div class="boot-wrap">
-      <div class="boot-logo">D</div>
-      <div style="text-align:center">
-        <div class="boot-name">Dopamine X</div>
-        <div class="boot-sub" style="margin-top:8px">Simulation Suite</div>
+    <div class="boot">
+      <div class="apple-ring">
+        <svg class="ring" viewBox="0 0 100 100">
+          <circle cx="50" cy="50" r="44"/>
+        </svg>
+        <svg class="apple" viewBox="0 0 170 170">
+          <path d="M150.37 130.25c-2.45 5.66-5.35 10.87-8.71 15.66-4.58 6.53-8.33 11.05-11.22 13.56-4.48 4.12-9.28 6.23-14.42 6.35-3.69 0-8.14-1.05-13.32-3.18-5.19-2.12-9.97-3.17-14.34-3.17-4.58 0-9.49 1.05-14.75 3.17-5.26 2.13-9.5 3.24-12.74 3.35-4.35.13-9.1-1.9-14.24-6.08-3.04-2.52-6.85-7.1-11.43-13.74-6.08-8.87-10.97-18.49-14.67-28.87-3.7-10.38-5.55-20.34-5.55-29.87 0-13.13 3.32-23.82 9.97-32.07 6.65-8.25 15.01-12.45 25.08-12.6 4.78 0 10.02 1.27 15.74 3.8 5.72 2.54 9.54 3.81 11.46 3.81 1.63 0 5.48-1.33 11.55-3.99 6.07-2.67 11.18-3.92 15.34-3.77 13.79.54 24.32 5.92 31.58 16.14-11.75 7.15-17.5 16.54-17.26 28.17.22 9.4 3.96 17.3 11.22 23.72 7.26 6.43 15.98 9.77 26.17 10.03-3.21 9.94-7.56 19.82-13.06 29.64zm-30.82-96.64c0-7.85 2.76-15.13 8.28-21.84 5.52-6.71 12.56-10.82 21.12-12.33.22 1.3 33 2.18 33 2.18s.11 1.41.11 4.24c0 7.39-2.79 14.52-8.38 21.39-5.58 6.87-12.63 11.02-21.14 12.44-.33-1.41-3.99-2.28-3.99-2.28s.09-1.54.09-3.8z"/>
+        </svg>
       </div>
-      <div class="boot-bar"><i></i></div>
+      <div class="boot-text">Dopamine X</div>
     </div>
   </section>
 
-  <!-- EXPLOIT -->
+  <!-- ═══════════════ LOCK / WELCOME ═══════════════ -->
+  <section class="view" id="view-lock">
+    <div class="lock-content">
+      <div class="lock-mark">D</div>
+      <div class="lock-titles">
+        <div class="lock-title">Dopamine X</div>
+        <div class="lock-sub">Next-Gen iOS Simulation Suite</div>
+      </div>
+
+      <div class="faceid" id="faceid">
+        <div class="scan-bar"></div>
+        <svg viewBox="0 0 64 64">
+          <path d="M14 22V16a4 4 0 0 1 4-4h6"/>
+          <path d="M40 12h6a4 4 0 0 1 4 4v6"/>
+          <path d="M50 42v6a4 4 0 0 1-4 4h-6"/>
+          <path d="M24 52h-6a4 4 0 0 1-4-4v-6"/>
+          <path d="M22 26v6M42 26v6M24 40s3 4 8 4 8-4 8-4"/>
+        </svg>
+      </div>
+
+      <div class="lock-hint" id="unlockBtn">Press to Unlock</div>
+    </div>
+  </section>
+
+  <!-- ═══════════════ HOME / SPRINGBOARD ═══════════════ -->
+  <section class="view" id="view-home">
+    <div class="home">
+      <div class="pages" id="pages">
+        <!-- Page 1 -->
+        <div class="page">
+          <div class="widgets">
+            <div class="widget">
+              <div class="widget-label"><i></i>System</div>
+              <div class="widget-value" id="w-status">Stock</div>
+              <div class="widget-sub" id="w-status-sub">Ready to deploy</div>
+            </div>
+            <div class="widget">
+              <div class="widget-label">Packages</div>
+              <div class="widget-value" id="w-pkgs">0</div>
+              <div class="widget-sub">installed</div>
+            </div>
+            <div class="widget wide">
+              <div class="widget-label"><i></i>Kernel Uptime</div>
+              <div class="widget-spark">
+                <svg viewBox="0 0 300 32" preserveAspectRatio="none">
+                  <path id="w-spark" d="M0 24 L20 20 L40 22 L60 16 L80 18 L100 12 L120 15 L140 8 L160 12 L180 6 L200 10 L220 4 L240 8 L260 3 L280 6 L300 2"/>
+                </svg>
+              </div>
+            </div>
+          </div>
+          <div class="app-grid" id="appGrid1"></div>
+        </div>
+        <!-- Page 2 -->
+        <div class="page">
+          <div class="widgets">
+            <div class="widget">
+              <div class="widget-label"><i></i>Environment</div>
+              <div class="widget-value sm" id="w-env">Rootless</div>
+              <div class="widget-sub">/var/jb</div>
+            </div>
+            <div class="widget">
+              <div class="widget-weather">
+                <div>
+                  <div class="widget-label">Chain</div>
+                  <div class="widget-value sm" id="w-chain">KFD</div>
+                </div>
+                <div class="ico">⚡</div>
+              </div>
+            </div>
+          </div>
+          <div class="app-grid" id="appGrid2"></div>
+        </div>
+      </div>
+
+      <div class="page-dots" id="dots"><span class="on"></span><span></span></div>
+
+      <div class="dock" id="dockGrid"></div>
+      <div class="home-indicator" id="homeIndicator"></div>
+    </div>
+  </section>
+
+  <!-- ═══════════════ EXPLOIT DASHBOARD ═══════════════ -->
   <section class="view" id="view-exploit">
     <div class="scroll">
       <div class="hero">
-        <div class="hero-badge">⚠ SIMULATED DEMO — NOT A REAL JAILBREAK</div>
+        <div class="hero-badge">SIMULATED · NOT A REAL JAILBREAK</div>
         <h1 class="hero-title">DOPAMINE X</h1>
-        <p class="hero-sub">Rootless Kernel Utility Suite · v3.1.0</p>
+        <p class="hero-sub">Rootless Kernel Utility · v3.1.0</p>
       </div>
 
       <div class="card">
-        <div class="scanline"></div>
-        <div class="card-label">Target Fingerprint</div>
+        <div class="scan"></div>
+        <div class="card-label">Target Fingerprint <span class="tag" id="fp-tag">STOCK</span></div>
         <div class="kv"><span class="kv-k">Device</span><span class="kv-v" id="d-model">Detecting…</span></div>
-        <div class="kv"><span class="kv-k">Firmware</span><span class="kv-v" id="d-os">Detecting…</span></div>
-        <div class="kv"><span class="kv-k">SoC / Arch</span><span class="kv-v" id="d-chip">—</span></div>
-        <div class="kv"><span class="kv-k">Display</span><span class="kv-v" id="d-screen">—</span></div>
+        <div class="kv"><span class="kv-k">Firmware</span><span class="kv-v" id="d-os">—</span></div>
+        <div class="kv"><span class="kv-k">SoC</span><span class="kv-v" id="d-chip">—</span></div>
         <div class="kv"><span class="kv-k">Cores / RAM</span><span class="kv-v" id="d-cores">—</span></div>
         <div class="kv"><span class="kv-k">Exploit Chain</span><span class="kv-v c-acc" id="d-chain">KFD · PAC Bypass</span></div>
         <div class="kv"><span class="kv-k">Status</span><span class="kv-v c-err" id="d-status">Unjailbroken</span></div>
@@ -308,7 +1100,7 @@ input{font-family:inherit}
           <div class="sw on" data-opt="verbose"></div>
         </div>
         <div class="row">
-          <div><div class="row-t">Disable OTA Updates</div><div class="row-d">Block the software update daemon</div></div>
+          <div><div class="row-t">Disable OTA</div><div class="row-d">Block softwareupdate daemon</div></div>
           <div class="sw on" data-opt="ota"></div>
         </div>
         <div class="row">
@@ -321,50 +1113,40 @@ input{font-family:inherit}
         <span class="jb-fill" id="jbFill"></span>
         <span class="jb-label">
           <span class="spinner"></span>
-          <span id="jbLabel">Start Exploit Process</span>
+          <span id="jbLabel">Start Exploit</span>
         </span>
       </button>
 
       <div class="stage-row">
-        <span class="stage-name" id="stageName">Idle — awaiting command</span>
+        <span class="stage-name" id="stageName">Idle</span>
         <span class="stage-pct" id="stagePct">0%</span>
       </div>
       <div class="track"><i id="progressFill"></i></div>
 
       <div class="term" id="log">
-        <div class="tl dim">[i] Dopamine X framework loaded.</div>
-        <div class="tl dim">[i] Target hardware profile analyzed.</div>
-        <div class="tl dim">[i] Ready to deploy exploit chain.</div>
+        <div class="tl dim">Dopamine X framework loaded</div>
+        <div class="tl dim">Target hardware profile analyzed</div>
+        <div class="tl dim">Ready to deploy exploit chain</div>
       </div>
 
-      <div style="text-align:center;font-size:10px;color:var(--mut-2);margin-top:18px;letter-spacing:.4px;line-height:1.6">
-        Purely cosmetic browser simulation.<br>No system access is performed or possible.
+      <div style="text-align:center;font-size:10px;color:var(--mut-2);margin-top:20px;letter-spacing:.4px;line-height:1.7">
+        Purely cosmetic browser simulation.<br>No system access is performed.
       </div>
     </div>
   </section>
 
-  <!-- HOME -->
-  <section class="view" id="view-home">
-    <div class="wallpaper"></div>
-    <div class="home-body">
-      <div class="home-status"><span class="dot-live"></span> Rootless Jailbreak Active</div>
-      <div class="app-grid" id="appGrid"></div>
-      <div class="dock"><div class="dock-inner" id="dockGrid"></div></div>
-      <div class="home-indicator"></div>
-    </div>
-  </section>
-
-  <!-- SILEO -->
+  <!-- ═══════════════ SILEO ═══════════════ -->
   <section class="view" id="view-sileo">
     <div class="app-bar">
       <button class="back-btn" data-home>‹</button>
       <div class="spacer"></div>
+      <div class="badge" id="sileoBadge">Rootless</div>
     </div>
     <div class="sileo-head">
       <div class="sileo-title">Sileo</div>
-      <div class="sileo-sub"><span class="dot-live" style="width:6px;height:6px"></span> Rootless · <span id="pkgCount">0</span> packages installed</div>
+      <div class="sileo-sub"><i></i> <span id="pkgCount">0</span> packages installed</div>
       <div class="search">
-        <span style="color:var(--mut-2);font-size:13px">⌕</span>
+        <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M16.5 16.5L21 21"/></svg>
         <input type="text" id="pkgSearch" placeholder="Search packages…">
       </div>
     </div>
@@ -380,24 +1162,24 @@ input{font-family:inherit}
     </div>
   </section>
 
-  <!-- TERMINAL -->
+  <!-- ═══════════════ TERMINAL ═══════════════ -->
   <section class="view" id="view-terminal">
     <div class="app-bar">
       <button class="back-btn" data-home>‹</button>
       <h2>Terminal</h2>
       <div class="spacer"></div>
-      <span style="font-size:10px;color:var(--ok);font-weight:700">root</span>
+      <span style="font-size:10px;color:var(--ok);font-weight:800;letter-spacing:.5px">ROOT</span>
     </div>
     <div class="term-full">
       <div class="term-out" id="termOut"></div>
       <div class="term-in-row">
-        <span class="ps1" id="termPs1">root#</span>
+        <span class="ps1">root#</span>
         <input type="text" id="termInput" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="type 'help'">
       </div>
     </div>
   </section>
 
-  <!-- SETTINGS -->
+  <!-- ═══════════════ SETTINGS ═══════════════ -->
   <section class="view" id="view-settings">
     <div class="app-bar">
       <button class="back-btn" data-home>‹</button>
@@ -414,7 +1196,7 @@ input{font-family:inherit}
         <div class="card-label">System</div>
         <div class="row"><div><div class="row-t">SSH over Wi-Fi</div><div class="row-d">dropbear · port 22</div></div><div class="sw" data-opt="ssh"></div></div>
         <div class="row"><div><div class="row-t">Auto Respring</div><div class="row-d">After package installation</div></div><div class="sw" data-opt="autorespring"></div></div>
-        <div class="row"><div><div class="row-t">Interface Sounds</div><div class="row-d">Subtle audio feedback</div></div><div class="sw on" data-opt="sound"></div></div>
+        <div class="row"><div><div class="row-t">Interface Sounds</div><div class="row-d">Subtle audio feedback</div></div><div class="sw" data-opt="sound"></div></div>
       </div>
       <div class="card">
         <div class="card-label">Accent Colour</div>
@@ -436,7 +1218,7 @@ input{font-family:inherit}
     </div>
   </section>
 
-  <!-- FILES -->
+  <!-- ═══════════════ FILES ═══════════════ -->
   <section class="view" id="view-files">
     <div class="app-bar">
       <button class="back-btn" id="filesUp">‹</button>
@@ -448,20 +1230,20 @@ input{font-family:inherit}
     </div>
   </section>
 
-  <!-- ABOUT -->
+  <!-- ═══════════════ ABOUT ═══════════════ -->
   <section class="view" id="view-about">
     <div class="app-bar">
       <button class="back-btn" data-home>‹</button>
       <h2>About</h2>
     </div>
     <div class="scroll">
-      <div class="card" style="text-align:center;padding:26px 18px">
-        <div style="width:74px;height:74px;border-radius:22px;margin:0 auto 14px;
-          background:linear-gradient(150deg,var(--acc),var(--acc2),var(--acc3));
-          display:flex;align-items:center;justify-content:center;font-size:32px;font-weight:800;color:#04040a;
-          box-shadow:0 0 40px color-mix(in srgb,var(--acc) 40%,transparent)">D</div>
-        <div style="font-size:22px;font-weight:800;letter-spacing:-.6px">Dopamine X</div>
-        <div style="font-size:11px;color:var(--mut);margin-top:5px;letter-spacing:1.2px;text-transform:uppercase;font-weight:600">Version 3.1.0 (build 9999)</div>
+      <div class="card" style="text-align:center;padding:28px 18px">
+        <div style="width:78px;height:78px;border-radius:24px;margin:0 auto 16px;
+          background:linear-gradient(150deg,var(--acc),var(--acc-2),var(--acc-3));
+          display:flex;align-items:center;justify-content:center;font-size:34px;font-weight:800;color:#04040a;
+          box-shadow:0 0 44px color-mix(in srgb,var(--acc) 40%,transparent),inset 0 2px 0 rgba(255,255,255,.35)">D</div>
+        <div style="font-size:24px;font-weight:800;letter-spacing:-.7px">Dopamine X</div>
+        <div style="font-size:11px;color:var(--mut);margin-top:6px;letter-spacing:1.4px;text-transform:uppercase;font-weight:600">Version 3.1.0 · Build 9999</div>
       </div>
       <div class="card">
         <div class="card-label">Environment</div>
@@ -469,7 +1251,7 @@ input{font-family:inherit}
       </div>
       <div class="card">
         <div class="card-label">Notice</div>
-        <div style="font-size:12px;color:var(--mut);line-height:1.65">
+        <div style="font-size:12px;color:var(--mut);line-height:1.7">
           This is an entirely cosmetic browser simulation built for interface demonstrations.
           It does not exploit, modify, or access any system, device, or network resource.
           All logs, addresses and package data are randomly generated for visual effect.
@@ -478,37 +1260,78 @@ input{font-family:inherit}
     </div>
   </section>
 
-  <!-- RESPIRING -->
+  <!-- ═══════════════ CONTROL CENTER ═══════════════ -->
+  <div id="cc">
+    <div class="cc-title">Control Centre</div>
+    <div class="cc-row">
+      <div class="cc-tile" data-cc="wifi">
+        <div class="cc-ico">ᯤ</div>
+        <div><div class="cc-lbl">Wi-Fi</div><div class="cc-sub" id="cc-wifi">Dopamine-X_5G</div></div>
+      </div>
+      <div class="cc-tile" data-cc="bt">
+        <div class="cc-ico">⏶</div>
+        <div><div class="cc-lbl">Bluetooth</div><div class="cc-sub">On</div></div>
+      </div>
+    </div>
+    <div class="cc-row">
+      <div class="cc-tile" data-cc="airplane">
+        <div class="cc-ico">✈</div>
+        <div><div class="cc-lbl">Airplane</div><div class="cc-sub">Off</div></div>
+      </div>
+      <div class="cc-tile" data-cc="rotation">
+        <div class="cc-ico">⟳</div>
+        <div><div class="cc-lbl">Rotation</div><div class="cc-sub">Locked</div></div>
+      </div>
+    </div>
+    <div class="cc-slider">
+      <div class="ico">☀</div>
+      <div class="track-slider"><div class="fill" id="ccBright" style="width:70%"></div></div>
+    </div>
+    <div class="cc-slider">
+      <div class="ico">🔊</div>
+      <div class="track-slider"><div class="fill" id="ccVolume" style="width:55%"></div></div>
+    </div>
+    <div style="text-align:center;margin-top:auto;padding-top:20px">
+      <button class="back-btn" style="margin:0 auto" id="ccClose">×</button>
+    </div>
+  </div>
+
+  <!-- ═══════════════ RESPIRING ═══════════════ -->
   <div id="respring">
-    <svg viewBox="0 0 170 170">
-      <path d="M150.37 130.25c-2.45 5.66-5.35 10.87-8.71 15.66-4.58 6.53-8.33 11.05-11.22 13.56-4.48 4.12-9.28 6.23-14.42 6.35-3.69 0-8.14-1.05-13.32-3.18-5.19-2.12-9.97-3.17-14.34-3.17-4.58 0-9.49 1.05-14.75 3.17-5.26 2.13-9.5 3.24-12.74 3.35-4.35.13-9.1-1.9-14.24-6.08-3.04-2.52-6.85-7.1-11.43-13.74-6.08-8.87-10.97-18.49-14.67-28.87-3.7-10.38-5.55-20.34-5.55-29.87 0-13.13 3.32-23.82 9.97-32.07 6.65-8.25 15.01-12.45 25.08-12.6 4.78 0 10.02 1.27 15.74 3.8 5.72 2.54 9.54 3.81 11.46 3.81 1.63 0 5.48-1.33 11.55-3.99 6.07-2.67 11.18-3.92 15.34-3.77 13.79.54 24.32 5.92 31.58 16.14-11.75 7.15-17.5 16.54-17.26 28.17.22 9.4 3.96 17.3 11.22 23.72 7.26 6.43 15.98 9.77 26.17 10.03-3.21 9.94-7.56 19.82-13.06 29.64zm-30.82-96.64c0-7.85 2.76-15.13 8.28-21.84 5.52-6.71 12.56-10.82 21.12-12.33.22 1.3 33 2.18 33 2.18s.11 1.41.11 4.24c0 7.39-2.79 14.52-8.38 21.39-5.58 6.87-12.63 11.02-21.14 12.44-.33-1.41-3.99-2.28-3.99-2.28s.09-1.54.09-3.8z"/>
-    </svg>
-    <div class="rs-bar"><i id="rsFill"></i></div>
+    <div class="rs-ring">
+      <svg class="ring" viewBox="0 0 100 100">
+        <circle id="rsCircle" cx="50" cy="50" r="44"/>
+      </svg>
+      <svg class="apple" viewBox="0 0 170 170">
+        <path d="M150.37 130.25c-2.45 5.66-5.35 10.87-8.71 15.66-4.58 6.53-8.33 11.05-11.22 13.56-4.48 4.12-9.28 6.23-14.42 6.35-3.69 0-8.14-1.05-13.32-3.18-5.19-2.12-9.97-3.17-14.34-3.17-4.58 0-9.49 1.05-14.75 3.17-5.26 2.13-9.5 3.24-12.74 3.35-4.35.13-9.1-1.9-14.24-6.08-3.04-2.52-6.85-7.1-11.43-13.74-6.08-8.87-10.97-18.49-14.67-28.87-3.7-10.38-5.55-20.34-5.55-29.87 0-13.13 3.32-23.82 9.97-32.07 6.65-8.25 15.01-12.45 25.08-12.6 4.78 0 10.02 1.27 15.74 3.8 5.72 2.54 9.54 3.81 11.46 3.81 1.63 0 5.48-1.33 11.55-3.99 6.07-2.67 11.18-3.92 15.34-3.77 13.79.54 24.32 5.92 31.58 16.14-11.75 7.15-17.5 16.54-17.26 28.17.22 9.4 3.96 17.3 11.22 23.72 7.26 6.43 15.98 9.77 26.17 10.03-3.21 9.94-7.56 19.82-13.06 29.64zm-30.82-96.64c0-7.85 2.76-15.13 8.28-21.84 5.52-6.71 12.56-10.82 21.12-12.33.22 1.3 33 2.18 33 2.18s.11 1.41.11 4.24c0 7.39-2.79 14.52-8.38 21.39-5.58 6.87-12.63 11.02-21.14 12.44-.33-1.41-3.99-2.28-3.99-2.28s.09-1.54.09-3.8z"/>
+      </svg>
+    </div>
     <div class="rs-text" id="rsText">Respringe…</div>
   </div>
 
+  <!-- ═══════════════ TOASTS ═══════════════ -->
   <div id="toasts"></div>
+
 </div>
 
 <script>
 'use strict';
 
-/* ============================================================
+/* ═══════════════════════════════════════════════════════════
    HELPERS
-   ============================================================ */
+   ═══════════════════════════════════════════════════════════ */
 const $  = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 const rand = (a, b) => Math.random() * (b - a) + a;
 const pick = arr => arr[Math.floor(Math.random() * arr.length)];
-const hexAddr = (bytes = 8) =>
-  '0x' + Array.from({ length: bytes }, () =>
-    Math.floor(Math.random() * 256).toString(16).padStart(2, '0')).join('');
-const escapeHtml = s => String(s).replace(/[&<>"]/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;' }[c]));
-
+const hex = (b = 8) => '0x' + Array.from({ length: b }, () =>
+  Math.floor(Math.random() * 256).toString(16).padStart(2, '0')).join('');
+const esc = s => String(s).replace(/[&<>"]/g, c =>
+  ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;' }[c]));
 const buzz = (p = 8) => { try { navigator.vibrate && navigator.vibrate(p); } catch (e) {} };
 
-/* ---- Audio ---- */
+/* Audio */
 let actx = null;
 function blip(freq = 660, dur = .08, type = 'sine', vol = .04) {
   if (!state.opts.sound) return;
@@ -523,12 +1346,13 @@ function blip(freq = 660, dur = .08, type = 'sine', vol = .04) {
     o.start(); o.stop(actx.currentTime + dur);
   } catch (e) {}
 }
-function chord(freqs, dur = .5) { freqs.forEach((f, i) => setTimeout(() => blip(f, dur, 'sine', .035), i * 90)); }
+const chord = (fs, d = .5) => fs.forEach((f, i) =>
+  setTimeout(() => blip(f, d, 'sine', .035), i * 90));
 
-/* ============================================================
+/* ═══════════════════════════════════════════════════════════
    STATE
-   ============================================================ */
-const DEFAULT_STATE = {
+   ═══════════════════════════════════════════════════════════ */
+const DEFAULT = {
   jailbroken: false,
   installed: [],
   accent: '#22d3ee',
@@ -538,64 +1362,66 @@ const DEFAULT_STATE = {
   },
   chain: 'KFD · PAC Bypass'
 };
-
 let state = (() => {
   try {
-    const raw = localStorage.getItem('dopamine-x');
-    if (!raw) return structuredClone(DEFAULT_STATE);
-    const parsed = JSON.parse(raw);
-    return { ...structuredClone(DEFAULT_STATE), ...parsed, opts: { ...DEFAULT_STATE.opts, ...(parsed.opts || {}) } };
-  } catch (e) { return structuredClone(DEFAULT_STATE); }
+    const raw = localStorage.getItem('dopamine-x-v2');
+    if (!raw) return structuredClone(DEFAULT);
+    const p = JSON.parse(raw);
+    return { ...structuredClone(DEFAULT), ...p, opts: { ...DEFAULT.opts, ...(p.opts || {}) } };
+  } catch (e) { return structuredClone(DEFAULT); }
 })();
-function save() { try { localStorage.setItem('dopamine-x', JSON.stringify(state)); } catch (e) {} }
+const save = () => { try { localStorage.setItem('dopamine-x-v2', JSON.stringify(state)); } catch (e) {} };
 
-/* ============================================================
-   DEVICE FINGERPRINT
-   ============================================================ */
+/* ═══════════════════════════════════════════════════════════
+   DEVICE INFO
+   ═══════════════════════════════════════════════════════════ */
 const ua = navigator.userAgent;
 const DEVICE = {
-  model: /iPad/.test(ua) ? 'iPad' : /iPhone/.test(ua) ? 'iPhone' : /Macintosh/.test(ua) ? 'Mac (Desktop)' : /Android/.test(ua) ? 'Android Device' : 'Desktop Browser',
+  model: /iPad/.test(ua) ? 'iPad' : /iPhone/.test(ua) ? 'iPhone' : /Mac/.test(ua) ? 'Mac (Desktop)' :
+         /Android/.test(ua) ? 'Android Device' : 'Desktop Browser',
   os: (() => {
     const m = ua.match(/OS (\d+)[_.](\d+)(?:[_.](\d+))?/);
     if (m) return `iOS ${m[1]}.${m[2]}${m[3] ? '.' + m[3] : ''}`;
     const a = ua.match(/Android (\d+(?:\.\d+)?)/);
     if (a) return `Android ${a[1]}`;
-    return 'iOS 17.x / 18.x (simulated)';
+    return 'iOS 17.4 (simulated)';
   })(),
   chip: pick(['Apple A15 Bionic', 'Apple A16 Bionic', 'Apple A17 Pro', 'Apple M1']),
   arch: 'arm64e',
   cores: navigator.hardwareConcurrency || 6,
   mem: navigator.deviceMemory ? navigator.deviceMemory + ' GB' : '6 GB',
-  screen: `${Math.round(screen.width * devicePixelRatio)}×${Math.round(screen.height * devicePixelRatio)} @${devicePixelRatio}x`,
+  screen: `${Math.round(screen.width * devicePixelRatio)}×${Math.round(screen.height * devicePixelRatio)}`,
   lang: navigator.language || 'en-US',
   tz: Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC'
 };
 
-/* ============================================================
-   VIEW ROUTER + TOASTS
-   ============================================================ */
+/* ═══════════════════════════════════════════════════════════
+   ROUTER + TOASTS
+   ═══════════════════════════════════════════════════════════ */
 function showView(name) {
   $$('.view').forEach(v => v.classList.toggle('active', v.id === 'view-' + name));
-  const scroller = $('#view-' + name + ' .scroll');
-  if (scroller) scroller.scrollTop = 0;
+  const sc = $('#view-' + name + ' .scroll');
+  if (sc) sc.scrollTop = 0;
 }
-
 function toast(msg, kind = '') {
   const el = document.createElement('div');
   el.className = 'toast ' + kind;
   el.textContent = msg;
   $('#toasts').appendChild(el);
   requestAnimationFrame(() => el.classList.add('show'));
-  setTimeout(() => { el.classList.remove('show'); setTimeout(() => el.remove(), 320); }, 2300);
+  setTimeout(() => { el.classList.remove('show'); setTimeout(() => el.remove(), 320); }, 2400);
+}
+function setPill(text, show = true) {
+  $('#sbPillText').textContent = text;
+  $('#sbPill').classList.toggle('show', show);
 }
 
-/* ============================================================
+/* ═══════════════════════════════════════════════════════════
    ACCENT
-   ============================================================ */
-function applyAccent(color) {
-  document.documentElement.style.setProperty('--acc', color);
-  // Derive a slightly different variant for gradient pair if desired
-  $$('#accentChips .chip').forEach(c => c.classList.toggle('on', c.dataset.accent === color));
+   ═══════════════════════════════════════════════════════════ */
+function applyAccent(c) {
+  document.documentElement.style.setProperty('--acc', c);
+  $$('#accentChips .chip').forEach(x => x.classList.toggle('on', x.dataset.accent === c));
 }
 $$('#accentChips .chip').forEach(c => c.addEventListener('click', () => {
   applyAccent(c.dataset.accent);
@@ -603,73 +1429,97 @@ $$('#accentChips .chip').forEach(c => c.addEventListener('click', () => {
   buzz(6); blip(820, .05);
 }));
 
-/* ============================================================
-   RENDER ALL
-   ============================================================ */
-function renderAll() {
-  renderApps();
-  syncSwitches();
+/* ═══════════════════════════════════════════════════════════
+   APPS DATA
+   ═══════════════════════════════════════════════════════════ */
+const APPS = [
+  { id:'sileo',    name:'Sileo',    glyph:'S',  c1:'#38bdf8', c2:'#4f46e5', dock:true },
+  { id:'terminal', name:'Terminal', glyph:'>_', c1:'#1f2937', c2:'#0b1220', dock:true, mono:true },
+  { id:'settings', name:'Settings', glyph:'⚙',  c1:'#6b7280', c2:'#374151', dock:true },
+  { id:'files',    name:'Files',    glyph:'🗂', c1:'#60a5fa', c2:'#2563eb', dock:true },
+  { id:'dopamine', name:'Dopamine', glyph:'D',  c1:'#22d3ee', c2:'#a855f7' },
+  { id:'respring', name:'Respring', glyph:'⟳',  c1:'#22d3ee', c2:'#0891b2' },
+  { id:'safe',     name:'Safe Mode',glyph:'⛑',  c1:'#fbbf24', c2:'#d97706' },
+  { id:'about',    name:'About',    glyph:'i',  c1:'#a855f7', c2:'#6d28d9' },
+  { id:'restore',  name:'Restore',  glyph:'⏻',  c1:'#f87171', c2:'#b91c1c' }
+];
 
-  $('#d-model').textContent = DEVICE.model;
-  $('#d-os').textContent = DEVICE.os;
-  $('#d-chip').textContent = `${DEVICE.chip} · ${DEVICE.arch}`;
-  $('#d-screen').textContent = DEVICE.screen;
-  $('#d-cores').textContent = `${DEVICE.cores} / ${DEVICE.mem}`;
-  $('#d-chain').textContent = state.chain;
+function renderApps() {
+  const g1 = $('#appGrid1'), g2 = $('#appGrid2'), dock = $('#dockGrid');
+  g1.innerHTML = g2.innerHTML = dock.innerHTML = '';
 
-  if (state.jailbroken) {
-    $('#d-status').textContent = 'Jailbroken · Rootless';
-    $('#d-status').className = 'kv-v c-ok';
-    $('#jbLabel').textContent = 'Re-run Exploit';
-  } else {
-    $('#d-status').textContent = 'Unjailbroken';
-    $('#d-status').className = 'kv-v c-err';
-  }
+  const dockApps = APPS.filter(a => a.dock);
+  const others   = APPS.filter(a => !a.dock);
+  const page1 = others.slice(0, 8);
+  const page2 = others.slice(8);
 
-  $$('#chainChips .chip').forEach(c => c.classList.toggle('on', c.dataset.chain === state.chain));
-  $$('#accentChips .chip').forEach(c => c.classList.toggle('on', c.dataset.accent === state.accent));
+  const makeBtn = (app, i) => {
+    const el = document.createElement('button');
+    el.className = 'app-btn';
+    el.style.animationDelay = (i * 0.04) + 's';
+    el.innerHTML = `
+      <span class="icon ${app.mono ? 'mono' : ''}" style="--c1:${app.c1};--c2:${app.c2}">${app.glyph}</span>
+      <span class="app-name">${app.name}</span>`;
+    el.addEventListener('click', () => launchApp(app.id));
+    return el;
+  };
+  page1.forEach((a, i) => g1.appendChild(makeBtn(a, i)));
+  page2.forEach((a, i) => g2.appendChild(makeBtn(a, i)));
+  dockApps.forEach((a, i) => dock.appendChild(makeBtn(a, i)));
 }
 
-/* ============================================================
-   OPTIONS
-   ============================================================ */
+function launchApp(id) {
+  buzz(6); blip(720, .05, 'sine', .025);
+  switch (id) {
+    case 'sileo':    renderSileo(); showView('sileo'); break;
+    case 'terminal': showView('terminal'); focusTerm(); break;
+    case 'settings': syncSwitches(); showView('settings'); break;
+    case 'files':    filesGo('/'); showView('files'); break;
+    case 'about':    renderAbout(); showView('about'); break;
+    case 'dopamine': showView('exploit'); break;
+    case 'respring': respring('Respringe…').then(() => toast('SpringBoard reloaded', 'ok')); break;
+    case 'safe':
+      state.opts.inject = false; save(); syncSwitches();
+      toast('Safe mode enabled', 'warn');
+      respring('Entering safe mode…');
+      break;
+    case 'restore': doRestore(); break;
+  }
+}
+
+$$('[data-home]').forEach(b => b.addEventListener('click', () => { showView('home'); buzz(5); }));
+
+/* ═══════════════════════════════════════════════════════════
+   OPTION TOGGLES
+   ═══════════════════════════════════════════════════════════ */
 document.addEventListener('click', e => {
   const sw = e.target.closest('.sw');
   if (!sw) return;
-  const key = sw.dataset.opt;
-  if (!key) return;
+  const k = sw.dataset.opt; if (!k) return;
   const on = !sw.classList.contains('on');
   sw.classList.toggle('on', on);
-  state.opts[key] = on;
-  save();
-  syncSwitches();
-  buzz(6);
+  state.opts[k] = on;
+  save(); syncSwitches(); buzz(6);
   blip(on ? 880 : 440, .05, 'sine', .025);
 });
-
 function syncSwitches() {
-  $$('.sw[data-opt]').forEach(sw => {
-    const k = sw.dataset.opt;
-    sw.classList.toggle('on', !!state.opts[k]);
-  });
+  $$('.sw[data-opt]').forEach(sw => sw.classList.toggle('on', !!state.opts[sw.dataset.opt]));
 }
 
-/* ============================================================
+/* ═══════════════════════════════════════════════════════════
    CHAIN CHIPS
-   ============================================================ */
-$$('#chainChips .chip').forEach(chip => {
-  chip.addEventListener('click', () => {
-    $$('#chainChips .chip').forEach(c => c.classList.remove('on'));
-    chip.classList.add('on');
-    state.chain = chip.dataset.chain;
-    $('#d-chain').textContent = state.chain;
-    save(); buzz(6);
-  });
-});
+   ═══════════════════════════════════════════════════════════ */
+$$('#chainChips .chip').forEach(chip => chip.addEventListener('click', () => {
+  $$('#chainChips .chip').forEach(c => c.classList.remove('on'));
+  chip.classList.add('on');
+  state.chain = chip.dataset.chain;
+  $('#d-chain').textContent = state.chain;
+  save(); buzz(6);
+}));
 
-/* ============================================================
-   EXPLOIT SEQUENCE
-   ============================================================ */
+/* ═══════════════════════════════════════════════════════════
+   EXPLOIT
+   ═══════════════════════════════════════════════════════════ */
 let running = false;
 
 function logLine(text, cls = '') {
@@ -681,7 +1531,6 @@ function logLine(text, cls = '') {
   box.scrollTop = box.scrollHeight;
   while (box.children.length > 260) box.removeChild(box.firstChild);
 }
-
 function setStage(name, pct) {
   $('#stageName').textContent = name;
   $('#stagePct').textContent = Math.round(pct) + '%';
@@ -692,75 +1541,70 @@ function setStage(name, pct) {
 function buildScript() {
   const chain = state.chain;
   const verbose = state.opts.verbose;
-  const kbase = hexAddr(8);
-
-  const stages = [
-    { title: 'Fingerprinting target', logs: [
-      { t: '[*] Establishing sandbox escape via WebKit surface…', c: '' },
-      { t: `[+] Target: ${DEVICE.model} · ${DEVICE.os}`, c: 'ok' },
-      { t: `[+] Architecture: ${DEVICE.arch} · ${DEVICE.cores} cores`, c: 'ok' },
-      { t: `[*] Kernel base candidate: ${kbase}`, c: '' },
-      { t: '[*] Reading IODeviceTree /chosen…', c: '' },
-      { t: `[+] Board config parsed. CPID ${Math.floor(rand(0x8000, 0xFFFF)).toString(16).toUpperCase()}`, c: 'ok' }
+  const kbase = hex(8);
+  const S = [
+    { title:'Fingerprinting target', logs:[
+      { t:'Establishing sandbox escape via WebKit surface…' },
+      { t:`Target: ${DEVICE.model} · ${DEVICE.os}`, c:'ok' },
+      { t:`Architecture: ${DEVICE.arch} · ${DEVICE.cores} cores`, c:'ok' },
+      { t:`Kernel base candidate: ${kbase}` },
+      { t:'Reading IODeviceTree /chosen…' },
+      { t:`Board config parsed. CPID ${Math.floor(rand(0x8000,0xFFFF)).toString(16).toUpperCase()}`, c:'ok' }
     ]},
-    { title: 'Priming memory spray', logs: [
-      { t: '[*] Allocating IOSurface objects…', c: '' },
-      { t: `[*] Spraying 0x${Math.floor(rand(0x2000, 0x9000)).toString(16)} pages`, c: '' },
-      { t: `[·] ${hexAddr(4)} → ${hexAddr(4)}  [mapped]`, c: 'dim' },
-      { t: `[·] ${hexAddr(4)} → ${hexAddr(4)}  [mapped]`, c: 'dim' },
-      { t: '[+] Heap groom stabilised.', c: 'ok' }
+    { title:'Priming memory spray', logs:[
+      { t:'Allocating IOSurface objects…' },
+      { t:`Spraying 0x${Math.floor(rand(0x2000,0x9000)).toString(16)} pages` },
+      { t:`${hex(4)} → ${hex(4)}  [mapped]`, c:'dim' },
+      { t:`${hex(4)} → ${hex(4)}  [mapped]`, c:'dim' },
+      { t:'Heap groom stabilised.', c:'ok' }
     ]},
-    { title: `Deploying ${chain}`, logs: [
-      { t: `[*] Loading chain: ${chain}`, c: '' },
-      { t: '[!] Triggering out-of-bounds read…', c: 'warn' },
-      { t: `[+] Leaked kernel pointer ${hexAddr(8)}`, c: 'ok' },
-      { t: `[+] Leaked task port ${hexAddr(8)}`, c: 'ok' },
-      { t: '[+] Kernel read/write primitive acquired.', c: 'ok' }
+    { title:`Deploying ${chain}`, logs:[
+      { t:`Loading chain: ${chain}` },
+      { t:'Triggering out-of-bounds read…', c:'warn' },
+      { t:`Leaked kernel pointer ${hex(8)}`, c:'ok' },
+      { t:`Leaked task port ${hex(8)}`, c:'ok' },
+      { t:'Kernel read/write primitive acquired.', c:'ok' }
     ]},
-    { title: 'Bypassing PAC / SPTM', logs: [
-      { t: '[*] Locating pointer authentication keys…', c: '' },
-      { t: `[·] PACIA key slot @ ${hexAddr(8)}`, c: 'dim' },
-      { t: '[+] Signing forged return addresses…', c: '' },
-      { t: '[+] PAC bypass complete.', c: 'ok' },
-      { t: '[+] SPTM page-table isolation defeated.', c: 'ok' }
+    { title:'Bypassing PAC / SPTM', logs:[
+      { t:'Locating pointer authentication keys…' },
+      { t:`PACIA key slot @ ${hex(8)}`, c:'dim' },
+      { t:'Signing forged return addresses…' },
+      { t:'PAC bypass complete.', c:'ok' },
+      { t:'SPTM page-table isolation defeated.', c:'ok' }
     ]},
-    { title: 'Escalating privileges', logs: [
-      { t: '[*] Patching ucred → uid 0 / gid 0…', c: '' },
-      { t: `[·] ucred @ ${hexAddr(8)}   cr_uid: 501 → 0`, c: 'dim' },
-      { t: '[+] sandbox_extensions cleared.', c: 'ok' },
-      { t: '[+] amfi / trust cache bypassed.', c: 'ok' },
-      { t: '[!] Code signing enforcement disabled.', c: 'warn' }
+    { title:'Escalating privileges', logs:[
+      { t:'Patching ucred → uid 0 / gid 0…' },
+      { t:`ucred @ ${hex(8)}   cr_uid: 501 → 0`, c:'dim' },
+      { t:'sandbox_extensions cleared.', c:'ok' },
+      { t:'amfi / trust cache bypassed.', c:'ok' },
+      { t:'Code signing enforcement disabled.', c:'warn' }
     ]},
-    { title: 'Remounting root filesystem', logs: [
-      { t: '[*] Requesting rootless remount…', c: '' },
-      { t: '[+] /private/preboot mounted read-write.', c: 'ok' },
-      { t: '[*] Creating /var/jb symlink structure…', c: '' },
-      { t: '[+] Rootless hierarchy online.', c: 'ok' }
+    { title:'Remounting root filesystem', logs:[
+      { t:'Requesting rootless remount…' },
+      { t:'/private/preboot mounted read-write.', c:'ok' },
+      { t:'Creating /var/jb symlink structure…' },
+      { t:'Rootless hierarchy online.', c:'ok' }
     ]},
-    { title: 'Installing bootstrap', logs: [
-      { t: '[*] Extracting bootstrap tarball…', c: '' },
-      { t: '[·] bin/  sbin/  usr/  lib/  Library/', c: 'dim' },
-      { t: '[+] dpkg initialised.', c: 'ok' },
-      { t: '[+] apt repositories configured.', c: 'ok' },
-      { t: '[+] uicache rebuilt.', c: 'ok' },
-      state.opts.inject ? { t: '[+] Substrate injected into SpringBoard.', c: 'ok' } : { t: '[!] Tweak injection disabled by user.', c: 'warn' },
-      state.opts.ssh ? { t: '[+] dropbear listening on :22', c: 'ok' } : { t: '[·] SSH disabled.', c: 'dim' },
-      state.opts.ota ? { t: '[+] OTA update daemon blocked.', c: 'ok' } : null
+    { title:'Installing bootstrap', logs:[
+      { t:'Extracting bootstrap tarball…' },
+      { t:'bin/  sbin/  usr/  lib/  Library/', c:'dim' },
+      { t:'dpkg initialised.', c:'ok' },
+      { t:'apt repositories configured.', c:'ok' },
+      { t:'uicache rebuilt.', c:'ok' },
+      state.opts.inject ? { t:'Substrate injected into SpringBoard.', c:'ok' }
+                        : { t:'Tweak injection disabled by user.', c:'warn' },
+      state.opts.ssh ? { t:'dropbear listening on :22', c:'ok' }
+                     : { t:'SSH disabled.', c:'dim' },
+      state.opts.ota ? { t:'OTA update daemon blocked.', c:'ok' } : null
     ].filter(Boolean)},
-    { title: 'Finalising', logs: [
-      { t: '[*] Flushing kernel caches…', c: '' },
-      { t: '[+] Trust chain stable.', c: 'ok' },
-      { t: '[✓] Exploit routine finalised. Respring imminent.', c: 'ok' }
+    { title:'Finalising', logs:[
+      { t:'Flushing kernel caches…' },
+      { t:'Trust chain stable.', c:'ok' },
+      { t:'Exploit routine finalised. Respring imminent.', c:'ok', cls:'hi' }
     ]}
   ];
-
-  if (!verbose) {
-    return stages.map(s => ({
-      title: s.title,
-      logs: s.logs.filter(l => l.c !== '' && l.c !== 'dim')
-    }));
-  }
-  return stages;
+  if (!verbose) return S.map(s => ({ title:s.title, logs:s.logs.filter(l => l.c !== 'dim') }));
+  return S;
 }
 
 async function runExploit() {
@@ -768,13 +1612,17 @@ async function runExploit() {
   running = true;
 
   const btn = $('#jbBtn');
-  btn.disabled = true;
-  btn.classList.add('busy');
+  btn.disabled = true; btn.classList.add('busy');
   $('#jbLabel').textContent = 'Running exploit…';
   $('#log').innerHTML = '';
   setStage('Initialising…', 0);
   buzz([15, 40, 15]);
   blip(320, .12, 'sawtooth', .03);
+
+  // Expand Dynamic Island
+  $('#island').classList.add('expanded');
+  await sleep(280);
+  $('#island').classList.remove('expanded');
 
   const stages = buildScript();
   const total = stages.reduce((a, s) => a + s.logs.length, 0);
@@ -783,7 +1631,7 @@ async function runExploit() {
   for (const stage of stages) {
     setStage(stage.title, (done / total) * 100);
     for (const line of stage.logs) {
-      logLine(line.t, line.c);
+      logLine(line.t, line.c || '');
       done++;
       setStage(stage.title, (done / total) * 100);
       await sleep(rand(55, 190));
@@ -792,159 +1640,98 @@ async function runExploit() {
   }
 
   setStage('Complete', 100);
-  logLine('', '');
-  logLine('[✓] Device is now jailbroken (rootless).', 'ok');
+  logLine('Device is now jailbroken (rootless).', 'ok');
 
   state.jailbroken = true;
   save();
-
   $('#d-status').textContent = 'Jailbroken · Rootless';
   $('#d-status').className = 'kv-v c-ok';
+  $('#fp-tag').textContent = 'ROOTLESS';
 
   buzz([20, 60, 20, 60, 40]);
   chord([523, 659, 784, 1047], .55);
-  toast('Exploit successful — jailbroken', 'ok');
+  toast('Exploit successful', 'ok');
+  setPill('Jailbroken · Rootless', true);
 
   await sleep(1100);
   await respring('Finalising environment…');
 
-  btn.disabled = false;
-  btn.classList.remove('busy');
+  btn.disabled = false; btn.classList.remove('busy');
   $('#jbLabel').textContent = 'Re-run Exploit';
   $('#jbFill').style.width = '0%';
   running = false;
 }
 
-/* ============================================================
+/* ═══════════════════════════════════════════════════════════
    RESPIRING
-   ============================================================ */
+   ═══════════════════════════════════════════════════════════ */
 async function respring(message = 'Respringe…') {
-  const rs = $('#respring'), fill = $('#rsFill'), txt = $('#rsText');
+  const rs = $('#respring'), txt = $('#rsText'), circ = $('#rsCircle');
   txt.textContent = message;
-  fill.style.width = '0%';
+  circ.style.strokeDashoffset = '276';
   rs.classList.add('on');
   await sleep(120);
 
-  for (let p = 0; p <= 100; p += 4) {
-    fill.style.width = p + '%';
+  const total = 276;
+  const steps = 42;
+  for (let i = 0; i <= steps; i++) {
+    circ.style.strokeDashoffset = String(total - (total * i / steps));
     await sleep(rand(14, 34));
   }
   await sleep(320);
-
   showView('home');
   renderAll();
   await sleep(260);
   rs.classList.remove('on');
 }
 
-/* ============================================================
-   APPS
-   ============================================================ */
-const APPS = [
-  { id: 'sileo',    name: 'Sileo',    glyph: 'S',  c1: '#38bdf8', c2: '#4f46e5', dock: true },
-  { id: 'terminal', name: 'Terminal', glyph: '>_', c1: '#1f2937', c2: '#0b1220', dock: true, mono: true },
-  { id: 'settings', name: 'Settings', glyph: '⚙',  c1: '#6b7280', c2: '#374151', dock: true },
-  { id: 'files',    name: 'Files',    glyph: '🗂', c1: '#60a5fa', c2: '#2563eb', dock: true },
-  { id: 'about',    name: 'About',    glyph: 'i',  c1: '#a855f7', c2: '#6d28d9' },
-  { id: 'respring', name: 'Respring', glyph: '⟳',  c1: '#22d3ee', c2: '#0891b2' },
-  { id: 'safe',     name: 'Safe Mode',glyph: '⛑',  c1: '#fbbf24', c2: '#d97706' },
-  { id: 'restore',  name: 'Restore',  glyph: '⏻',  c1: '#f87171', c2: '#b91c1c' }
-];
-
-function renderApps() {
-  const grid = $('#appGrid'), dock = $('#dockGrid');
-  grid.innerHTML = ''; dock.innerHTML = '';
-  const homeApps = APPS.filter(a => !a.dock);
-  const dockApps = APPS.filter(a => a.dock);
-
-  [...dockApps, ...homeApps].forEach((app, i) => {
-    const el = document.createElement('button');
-    el.className = 'app';
-    el.style.animationDelay = (i * 0.035) + 's';
-    el.innerHTML = `
-      <span class="tile" style="--c1:${app.c1};--c2:${app.c2};${app.mono ? 'font-family:ui-monospace,monospace;font-size:19px;' : ''}">${app.glyph}</span>
-      <span class="app-name">${app.name}</span>`;
-    el.addEventListener('click', () => launchApp(app.id));
-    (app.dock ? dock : grid).appendChild(el);
-  });
-}
-
-function launchApp(id) {
-  buzz(6);
-  blip(720, .05, 'sine', .025);
-  switch (id) {
-    case 'sileo':    renderSileo(); showView('sileo'); break;
-    case 'terminal': showView('terminal'); focusTerm(); break;
-    case 'settings': syncSwitches(); showView('settings'); break;
-    case 'files':    filesGo('/'); showView('files'); break;
-    case 'about':    renderAbout(); showView('about'); break;
-    case 'respring': respring('Respringe…').then(() => toast('SpringBoard reloaded', 'ok')); break;
-    case 'safe':
-      state.opts.inject = false; save(); syncSwitches();
-      toast('Safe mode enabled — respringing', 'warn');
-      respring('Entering safe mode…');
-      break;
-    case 'restore': doRestore(); break;
-  }
-}
-
-$$('[data-home]').forEach(b => b.addEventListener('click', () => { showView('home'); buzz(5); }));
-
-/* ============================================================
+/* ═══════════════════════════════════════════════════════════
    SILEO
-   ============================================================ */
+   ═══════════════════════════════════════════════════════════ */
 const REPOS = [
-  { name: 'Chariz',    url: 'https://repo.chariz.com/',              ok: true },
-  { name: 'Havoc',     url: 'https://apt.havoc.app/',                ok: true },
-  { name: 'BigBoss',   url: 'http://apt.thebigboss.org/repofiles/cydia/', ok: true },
-  { name: 'Packix',    url: 'https://repo.packix.com/',              ok: true },
-  { name: 'Dynastic',  url: 'https://repo.dynastic.co/',             ok: false }
+  { name:'Chariz',   url:'https://repo.chariz.com/',  ok:true },
+  { name:'Havoc',    url:'https://apt.havoc.app/',    ok:true },
+  { name:'BigBoss',  url:'http://apt.thebigboss.org/repofiles/cydia/', ok:true },
+  { name:'Packix',   url:'https://repo.packix.com/',  ok:true },
+  { name:'Dynastic', url:'https://repo.dynastic.co/', ok:false }
 ];
-
 const PACKAGES = [
-  { id: 'snowboard', name: 'SnowBoard',        ver: '1.5.32',  desc: 'Universal icon theming engine',        repo: 'Chariz',   size: '1.2 MB', glyph: '🎨' },
-  { id: 'cylinder',  name: 'Cylinder Reborn',  ver: '1.1.4',   desc: 'Animated home screen page effects',    repo: 'Havoc',    size: '840 KB', glyph: '🌀' },
-  { id: 'xenhtml',   name: 'Xen HTML',         ver: '2.0.9',   desc: 'HTML widgets for the lock & home screen', repo: 'Packix', size: '2.1 MB', glyph: '🧩' },
-  { id: 'icleaner',  name: 'iCleaner Pro',     ver: '7.10.2',  desc: 'Storage & cache optimiser',            repo: 'BigBoss',  size: '1.6 MB', glyph: '🧹' },
-  { id: 'filza',     name: 'Filza File Manager', ver: '4.0.1', desc: 'Browse the root filesystem',           repo: 'BigBoss',  size: '5.4 MB', glyph: '📁' },
-  { id: 'newterm',   name: 'NewTerm 3',        ver: '3.0~b1',  desc: 'Full terminal emulator for iOS',       repo: 'Chariz',   size: '3.2 MB', glyph: '⌨️' },
-  { id: 'choicy',    name: 'Choicy',           ver: '1.4.5',   desc: 'Per-app tweak injection control',      repo: 'Havoc',    size: '620 KB', glyph: '🎛' },
-  { id: 'ccsupport', name: 'CCSupport',        ver: '1.3.2',   desc: 'Control Center module framework',      repo: 'Packix',   size: '410 KB', glyph: '🎚' },
-  { id: 'shshd',     name: 'shshd',            ver: '1.0.3',   desc: 'Re-signs system daemons on boot',      repo: 'Dynastic', size: '180 KB', glyph: '🔐' },
-  { id: 'libhooker', name: 'libhooker',        ver: '1.6.9',   desc: 'Modern hooking library backend',       repo: 'Chariz',   size: '310 KB', glyph: '🪝' }
+  { id:'snowboard', name:'SnowBoard',       ver:'1.5.32', desc:'Universal icon theming engine',           repo:'Chariz',   size:'1.2 MB', glyph:'🎨' },
+  { id:'cylinder',  name:'Cylinder Reborn', ver:'1.1.4',  desc:'Animated home screen page effects',       repo:'Havoc',    size:'840 KB', glyph:'🌀' },
+  { id:'xenhtml',   name:'Xen HTML',        ver:'2.0.9',  desc:'HTML widgets for lock &amp; home screen', repo:'Packix',   size:'2.1 MB', glyph:'🧩' },
+  { id:'icleaner',  name:'iCleaner Pro',    ver:'7.10.2', desc:'Storage &amp; cache optimiser',          repo:'BigBoss',  size:'1.6 MB', glyph:'🧹' },
+  { id:'filza',     name:'Filza Manager',   ver:'4.0.1',  desc:'Browse the root filesystem',              repo:'BigBoss',  size:'5.4 MB', glyph:'📁' },
+  { id:'newterm',   name:'NewTerm 3',       ver:'3.0~b1', desc:'Full terminal emulator for iOS',          repo:'Chariz',   size:'3.2 MB', glyph:'⌨️' },
+  { id:'choicy',    name:'Choicy',          ver:'1.4.5',  desc:'Per-app tweak injection control',         repo:'Havoc',    size:'620 KB', glyph:'🎛' },
+  { id:'ccsupport', name:'CCSupport',       ver:'1.3.2',  desc:'Control Center module framework',         repo:'Packix',   size:'410 KB', glyph:'🎚' },
+  { id:'shshd',     name:'shshd',           ver:'1.0.3',  desc:'Re-signs system daemons on boot',         repo:'Dynastic', size:'180 KB', glyph:'🔐' },
+  { id:'libhooker', name:'libhooker',       ver:'1.6.9',  desc:'Modern hooking library backend',          repo:'Chariz',   size:'310 KB', glyph:'🪝' }
 ];
 
-let installQueue = [];
+let queue = [];
 let installing = false;
-const pkgById = id => PACKAGES.find(p => p.id === id);
-
-function pkgStatus(id) {
+const byId = id => PACKAGES.find(p => p.id === id);
+function statusOf(id) {
   if (state.installed.includes(id)) return 'installed';
-  if (installing && installQueue[0] === id) return 'installing';
-  if (installQueue.includes(id)) return 'queued';
+  if (installing && queue[0] === id) return 'installing';
+  if (queue.includes(id)) return 'queued';
   return 'available';
 }
-
 function queueInstall(id) {
-  if (pkgStatus(id) !== 'available') return;
-  installQueue.push(id);
-  buzz(8); blip(600, .06);
-  renderSileo();
-  processQueue();
+  if (statusOf(id) !== 'available') return;
+  queue.push(id); buzz(8); blip(600, .06);
+  renderSileo(); processQueue();
 }
-
 async function processQueue() {
   if (installing) return;
   installing = true;
-  while (installQueue.length) {
-    const id = installQueue[0];
+  while (queue.length) {
+    const id = queue[0];
     renderSileo();
     await sleep(rand(1100, 1900));
-    state.installed.push(id);
-    save();
-    installQueue.shift();
-    renderSileo();
-    toast(`${pkgById(id).name} installed`, 'ok');
+    state.installed.push(id); save();
+    queue.shift(); renderSileo();
+    toast(`${byId(id).name} installed`, 'ok');
     buzz(12); blip(980, .09);
     await sleep(220);
   }
@@ -956,177 +1743,146 @@ async function processQueue() {
     respring('Applying packages…');
   }
 }
-
 function removePkg(id) {
   state.installed = state.installed.filter(x => x !== id);
   save(); renderSileo();
-  toast(`${pkgById(id).name} removed`, 'warn');
+  toast(`${byId(id).name} removed`, 'warn');
   buzz(10); blip(300, .1);
 }
 
-let currentTab = 'featured';
-let searchQuery = '';
-
+let searchQ = '';
 $$('.tab').forEach(t => t.addEventListener('click', () => {
   $$('.tab').forEach(x => x.classList.remove('on'));
   t.classList.add('on');
-  currentTab = t.dataset.tab;
   $$('.pane').forEach(p => p.classList.remove('on'));
-  $('#pane-' + currentTab).classList.add('on');
+  $('#pane-' + t.dataset.tab).classList.add('on');
   buzz(5);
 }));
-
-$('#pkgSearch').addEventListener('input', e => {
-  searchQuery = e.target.value.toLowerCase().trim();
-  renderSileo();
-});
+$('#pkgSearch').addEventListener('input', e => { searchQ = e.target.value.toLowerCase().trim(); renderSileo(); });
 
 function pkgCard(p) {
-  const status = pkgStatus(p.id);
+  const s = statusOf(p.id);
   let btn;
-  if (status === 'installed')      btn = `<button class="ibtn done" data-remove="${p.id}">Installed</button>`;
-  else if (status === 'installing')btn = `<button class="ibtn busy">Installing…</button>`;
-  else if (status === 'queued')    btn = `<button class="ibtn busy">Queued</button>`;
-  else                              btn = `<button class="ibtn" data-install="${p.id}">Get</button>`;
-  return `
-    <div class="pkg">
-      <div class="pkg-ico">${p.glyph}</div>
-      <div class="pkg-info">
-        <div class="pkg-name">${p.name} <span class="pkg-ver">${p.ver}</span></div>
-        <div class="pkg-desc">${p.desc}</div>
-        <div class="pkg-meta">${p.repo} · ${p.size}</div>
-      </div>
-      ${btn}
-    </div>`;
+  if (s === 'installed')      btn = `<button class="ibtn done" data-remove="${p.id}">Installed</button>`;
+  else if (s === 'installing')btn = `<button class="ibtn busy">Installing…</button>`;
+  else if (s === 'queued')    btn = `<button class="ibtn busy">Queued</button>`;
+  else                        btn = `<button class="ibtn" data-install="${p.id}">Get</button>`;
+  return `<div class="pkg">
+    <div class="pkg-ico">${p.glyph}</div>
+    <div class="pkg-info">
+      <div class="pkg-name">${p.name} <span class="pkg-ver">${p.ver}</span></div>
+      <div class="pkg-desc">${p.desc}</div>
+      <div class="pkg-meta">${p.repo} · ${p.size}</div>
+    </div>${btn}</div>`;
 }
-
 function renderSileo() {
   $('#pkgCount').textContent = state.installed.length;
+  $('#sileoBadge').textContent = state.jailbroken ? 'Rootless' : 'Stock';
 
   let list = PACKAGES;
-  if (searchQuery) {
-    list = PACKAGES.filter(p =>
-      p.name.toLowerCase().includes(searchQuery) ||
-      p.desc.toLowerCase().includes(searchQuery));
-  }
+  if (searchQ) list = PACKAGES.filter(p =>
+    p.name.toLowerCase().includes(searchQ) || p.desc.toLowerCase().includes(searchQ));
   $('#pane-featured').innerHTML = list.length
     ? list.map(pkgCard).join('')
     : `<div style="text-align:center;color:var(--mut-2);font-size:12px;padding:32px 0">No packages found</div>`;
 
-  const inst = state.installed.map(pkgById).filter(Boolean);
+  const inst = state.installed.map(byId).filter(Boolean);
   $('#pane-installed').innerHTML = inst.length
-    ? inst.map(p => `
-        <div class="pkg">
-          <div class="pkg-ico">${p.glyph}</div>
-          <div class="pkg-info">
-            <div class="pkg-name">${p.name} <span class="pkg-ver">${p.ver}</span></div>
-            <div class="pkg-desc">${p.desc}</div>
-          </div>
-          <button class="ibtn remove" data-remove="${p.id}">Remove</button>
-        </div>`).join('')
+    ? inst.map(p => `<div class="pkg">
+        <div class="pkg-ico">${p.glyph}</div>
+        <div class="pkg-info">
+          <div class="pkg-name">${p.name} <span class="pkg-ver">${p.ver}</span></div>
+          <div class="pkg-desc">${p.desc}</div>
+        </div>
+        <button class="ibtn remove" data-remove="${p.id}">Remove</button>
+      </div>`).join('')
     : `<div style="text-align:center;color:var(--mut-2);font-size:12px;padding:32px 0">No packages installed yet</div>`;
 
-  $('#pane-sources').innerHTML = REPOS.map(r => `
-    <div class="repo">
-      <div><h4>${r.name}</h4><p>${r.url}</p></div>
-      <span class="verified" style="${r.ok ? '' : 'color:var(--mut-2)'}">${r.ok ? '✓ VERIFIED' : 'UNVERIFIED'}</span>
-    </div>`).join('');
+  $('#pane-sources').innerHTML = REPOS.map(r => `<div class="repo">
+    <div><h4>${r.name}</h4><p>${r.url}</p></div>
+    <span class="verified" style="${r.ok ? '' : 'color:var(--mut-2)'}">${r.ok ? '✓ VERIFIED' : 'UNVERIFIED'}</span>
+  </div>`).join('');
 
   $$('[data-install]').forEach(b => b.onclick = () => queueInstall(b.dataset.install));
   $$('[data-remove]').forEach(b => b.onclick = () => removePkg(b.dataset.remove));
 }
 
-/* ============================================================
-   VIRTUAL FS
-   ============================================================ */
+/* ═══════════════════════════════════════════════════════════
+   VFS
+   ═══════════════════════════════════════════════════════════ */
 const VFS_DIRS = {
-  '/': ['Applications', 'Library', 'System', 'bin', 'etc', 'private', 'usr', 'var'],
-  '/Applications': ['Sileo.app', 'Terminal.app', 'Filza.app', 'Dopamine.app'],
-  '/Library': ['LaunchDaemons', 'MobileSubstrate', 'Themes'],
-  '/Library/LaunchDaemons': ['com.dopamine.jailbreakd.plist', 'com.dopamine.ssh.plist'],
+  '/': ['Applications','Library','System','bin','etc','private','usr','var'],
+  '/Applications': ['Sileo.app','Terminal.app','Filza.app','Dopamine.app'],
+  '/Library': ['LaunchDaemons','MobileSubstrate','Themes'],
+  '/Library/LaunchDaemons': ['com.dopamine.jailbreakd.plist','com.dopamine.ssh.plist'],
   '/Library/MobileSubstrate': ['DynamicLibraries'],
-  '/Library/MobileSubstrate/DynamicLibraries': ['SnowBoard.dylib', 'Cylinder.dylib', 'Choicy.dylib'],
-  '/Library/Themes': ['NeonDark.theme', 'GlassUI.theme'],
+  '/Library/MobileSubstrate/DynamicLibraries': ['SnowBoard.dylib','Cylinder.dylib','Choicy.dylib'],
+  '/Library/Themes': ['NeonDark.theme','GlassUI.theme'],
   '/System': ['Library'],
-  '/System/Library': ['Extensions', 'Frameworks', 'PrivateFrameworks'],
-  '/bin': ['bash', 'cat', 'ls', 'sh', 'zsh'],
-  '/etc': ['apt', 'fstab', 'hosts', 'passwd', 'profile'],
-  '/etc/apt': ['sources.list', 'trusted.gpg'],
-  '/private': ['etc', 'preboot', 'var'],
+  '/System/Library': ['Extensions','Frameworks','PrivateFrameworks'],
+  '/bin': ['bash','cat','ls','sh','zsh'],
+  '/etc': ['apt','fstab','hosts','passwd','profile'],
+  '/etc/apt': ['sources.list','trusted.gpg'],
+  '/private': ['etc','preboot','var'],
   '/private/preboot': ['jb-7F3A2C'],
-  '/usr': ['bin', 'lib', 'share'],
-  '/usr/bin': ['apt', 'dpkg', 'ldid', 'sbreload', 'uicache'],
-  '/usr/lib': ['libhooker.dylib', 'libsubstrate.dylib'],
-  '/var': ['jb', 'log', 'mobile'],
-  '/var/jb': ['Applications', 'Library', 'usr'],
-  '/var/mobile': ['Documents', 'Library', 'Media'],
+  '/usr': ['bin','lib','share'],
+  '/usr/bin': ['apt','dpkg','ldid','sbreload','uicache'],
+  '/usr/lib': ['libhooker.dylib','libsubstrate.dylib'],
+  '/var': ['jb','log','mobile'],
+  '/var/jb': ['Applications','Library','usr'],
+  '/var/mobile': ['Documents','Library','Media'],
   '/var/mobile/Documents': []
 };
-
 const VFS_FILES = {
   '/etc/hosts': '127.0.0.1\tlocalhost\n255.255.255.255\tbroadcasthost\n::1\tlocalhost\n',
-  '/etc/passwd': 'root:x:0:0:root:/var/root:/bin/sh\nmobile:x:501:501:Mobile:/var/mobile:/bin/sh\ndaemon:x:1:1:daemon:/var/root:/usr/bin/false\n',
+  '/etc/passwd': 'root:x:0:0:root:/var/root:/bin/sh\nmobile:x:501:501:Mobile:/var/mobile:/bin/sh\n',
   '/etc/fstab': '# /etc/fstab\n/dev/disk0s1s1\t/\thfs\trw,noatime\t0\t0\n',
   '/etc/profile': '# System-wide profile\nexport PATH=/var/jb/usr/bin:/usr/bin:/bin:/sbin\n',
-  '/etc/apt/sources.list': 'deb https://repo.chariz.com/ ./\ndeb https://apt.havoc.app/ ./\ndeb http://apt.thebigboss.org/repofiles/cydia/ stable main\n',
-  '/etc/apt/trusted.gpg': '<binary gpg keyring data>',
+  '/etc/apt/sources.list': 'deb https://repo.chariz.com/ ./\ndeb https://apt.havoc.app/ ./\n',
   '/Library/LaunchDaemons/com.dopamine.jailbreakd.plist': '<?xml version="1.0"?>\n<plist><dict><key>Label</key><string>com.dopamine.jailbreakd</string></dict></plist>\n'
 };
 
-/* ============================================================
-   FILES APP
-   ============================================================ */
+/* ═══════════════════════════════════════════════════════════
+   FILES
+   ═══════════════════════════════════════════════════════════ */
 let filesCwd = '/';
-
-function filesGo(path) {
-  filesCwd = path;
-  $('#filesPath').textContent = path;
-  const dirs = VFS_DIRS[path] || [];
-  const files = Object.keys(VFS_FILES).filter(f => {
-    const parent = f.substring(0, f.lastIndexOf('/')) || '/';
-    return parent === path;
-  });
+function filesGo(p) {
+  filesCwd = p;
+  $('#filesPath').textContent = p;
+  const dirs = VFS_DIRS[p] || [];
+  const files = Object.keys(VFS_FILES).filter(f => (f.substring(0, f.lastIndexOf('/')) || '/') === p);
 
   const list = $('#filesList');
   if (!dirs.length && !files.length) {
     list.innerHTML = `<div style="text-align:center;color:var(--mut-2);font-size:12px;padding:28px 0">Empty directory</div>`;
     return;
   }
-
   list.innerHTML =
-    dirs.map(d => `<div class="file-row" data-dir="${(path === '/' ? '' : path) + '/' + d}">
-        <span class="file-ico">📁</span><span class="file-name">${d}</span><span class="file-chev">›</span>
-      </div>`).join('') +
+    dirs.map(d => `<div class="file-row" data-dir="${(p === '/' ? '' : p) + '/' + d}">
+      <span class="file-ico">📁</span><span class="file-name">${d}</span><span class="file-chev">›</span>
+    </div>`).join('') +
     files.map(f => `<div class="file-row" data-file="${f}">
-        <span class="file-ico">📄</span><span class="file-name">${f.split('/').pop()}</span><span class="file-chev">·</span>
-      </div>`).join('');
+      <span class="file-ico">📄</span><span class="file-name">${f.split('/').pop()}</span><span class="file-chev">·</span>
+    </div>`).join('');
 
   $$('#filesList [data-dir]').forEach(el => el.onclick = () => { filesGo(el.dataset.dir); buzz(5); });
   $$('#filesList [data-file]').forEach(el => el.onclick = () => {
-    toast(el.dataset.file.split('/').pop() + ' opened', ''); buzz(5);
+    toast(el.dataset.file.split('/').pop() + ' opened'); buzz(5);
   });
 }
-
 $('#filesUp').onclick = () => {
   if (filesCwd === '/') { showView('home'); return; }
-  const parent = filesCwd.substring(0, filesCwd.lastIndexOf('/')) || '/';
-  filesGo(parent); buzz(5);
+  filesGo(filesCwd.substring(0, filesCwd.lastIndexOf('/')) || '/'); buzz(5);
 };
 
-/* ============================================================
+/* ═══════════════════════════════════════════════════════════
    ABOUT
-   ============================================================ */
+   ═══════════════════════════════════════════════════════════ */
 function renderAbout() {
   const rows = [
-    ['Model', DEVICE.model],
-    ['Firmware', DEVICE.os],
-    ['SoC', DEVICE.chip],
-    ['Architecture', DEVICE.arch],
-    ['CPU Cores', DEVICE.cores],
-    ['Memory', DEVICE.mem],
-    ['Display', DEVICE.screen],
-    ['Language', DEVICE.lang],
-    ['Time Zone', DEVICE.tz],
+    ['Model', DEVICE.model], ['Firmware', DEVICE.os], ['SoC', DEVICE.chip],
+    ['Architecture', DEVICE.arch], ['CPU Cores', DEVICE.cores], ['Memory', DEVICE.mem],
+    ['Display', DEVICE.screen], ['Language', DEVICE.lang], ['Time Zone', DEVICE.tz],
     ['Exploit Chain', state.chain],
     ['Bootstrap', state.jailbroken ? '/var/jb (rootless)' : 'Not installed'],
     ['Packages', state.installed.length],
@@ -1136,28 +1892,30 @@ function renderAbout() {
     `<div class="kv"><span class="kv-k">${k}</span><span class="kv-v">${v}</span></div>`).join('');
 }
 
-/* ============================================================
-   RESTORE ROOTFS
-   ============================================================ */
+/* ═══════════════════════════════════════════════════════════
+   RESTORE
+   ═══════════════════════════════════════════════════════════ */
 async function doRestore() {
   toast('Restoring RootFS…', 'warn');
   await respring('Restoring RootFS…');
   state.jailbroken = false;
   state.installed = [];
-  installQueue = [];
+  queue = [];
   save();
   $('#d-status').textContent = 'Unjailbroken';
   $('#d-status').className = 'kv-v c-err';
-  $('#jbLabel').textContent = 'Start Exploit Process';
+  $('#fp-tag').textContent = 'STOCK';
+  $('#jbLabel').textContent = 'Start Exploit';
+  setPill('', false);
   showView('exploit');
   toast('RootFS restored — device is stock', 'ok');
 }
 $('#restoreBtn').onclick = doRestore;
 
-/* ============================================================
-   TERMINAL SHELL
-   ============================================================ */
-const shell = { cwd: '/', hist: [], histIdx: -1 };
+/* ═══════════════════════════════════════════════════════════
+   TERMINAL
+   ═══════════════════════════════════════════════════════════ */
+const sh = { cwd: '/', hist: [], idx: -1 };
 
 function out(text, cls = '') {
   const box = $('#termOut');
@@ -1168,15 +1926,13 @@ function out(text, cls = '') {
   box.scrollTop = box.scrollHeight;
   while (box.children.length > 400) box.removeChild(box.firstChild);
 }
+const focusTerm = () => setTimeout(() => $('#termInput').focus(), 320);
 
-function focusTerm() { setTimeout(() => $('#termInput').focus(), 320); }
-
-function resolvePath(p) {
-  if (!p) return shell.cwd;
-  const base = p.startsWith('/') ? p : (shell.cwd === '/' ? '' : shell.cwd) + '/' + p;
-  const parts = base.split('/').filter(Boolean);
+function resolve(p) {
+  if (!p) return sh.cwd;
+  const base = p.startsWith('/') ? p : (sh.cwd === '/' ? '' : sh.cwd) + '/' + p;
   const stack = [];
-  for (const part of parts) {
+  for (const part of base.split('/').filter(Boolean)) {
     if (part === '.') continue;
     if (part === '..') stack.pop();
     else stack.push(part);
@@ -1186,75 +1942,55 @@ function resolvePath(p) {
 
 const CMDS = {
   help() {
-    out('Dopamine X Mobile Shell — available commands:', 'o-acc');
-    out('  help              show this directory');
-    out('  neofetch          system information banner');
-    out('  ls [path]         list directory contents');
-    out('  cd <path>         change directory');
-    out('  pwd               print working directory');
-    out('  cat <file>        print file contents');
-    out('  echo <text>       print text');
-    out('  whoami / id       current user identity');
-    out('  uname -a          kernel information');
-    out('  uptime / date     system time');
-    out('  ps                running processes');
-    out('  df -h             disk usage');
-    out('  dpkg -l           installed packages');
-    out('  apt list          browse repositories');
-    out('  uicache           rebuild icon cache');
-    out('  sbreload          restart SpringBoard');
-    out('  open <app>        launch an app (sileo/terminal/settings/files/about)');
-    out('  theme <name>      accent: cyan|violet|pink|emerald|amber');
-    out('  clear             clear the screen');
-    out('  matrix            ???');
+    out('Dopamine X Mobile Shell — commands:', 'o-acc');
+    ['help','neofetch','ls [path]','cd <path>','pwd','cat <file>','echo <text>',
+     'whoami / id','uname -a','uptime / date','ps','df -h','dpkg -l','apt list',
+     'uicache','sbreload','open <app>','theme <name>','clear','matrix']
+      .forEach(c => out('  ' + c));
   },
   neofetch() {
-    out('&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;.:\'&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:\'', 'o-acc');
-    out('&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;root@dopamine', 'o-acc');
-    out('&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:.\'&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;.\':&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;─────────────', 'o-acc');
-    out(`&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:.\'&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;.\'&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;OS: ${DEVICE.os}`, '');
-    out(`&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:\'&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Host: ${DEVICE.model}`, '');
-    out(`&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:\'&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Kernel: Darwin 24.0.0`, '');
-    out(`&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:\'&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Shell: zsh 5.9`, '');
-    out(`&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:\'&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Packages: ${state.installed.length}`, '');
-    out(`&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:\'&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Status: ${state.jailbroken ? 'Jailbroken (rootless)' : 'Stock'}`, 'o-ok');
+    out('&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;.:\'&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:\'', 'o-acc');
+    out('&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:&nbsp;&nbsp;&nbsp;&nbsp;root@dopamine', 'o-acc');
+    out('&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:.\'&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;.\':&nbsp;&nbsp;&nbsp;&nbsp;─────────────', 'o-acc');
+    out(`&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:.\'&nbsp;&nbsp;&nbsp;&nbsp;.\'&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;OS: ${DEVICE.os}`);
+    out(`&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:\'&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Host: ${DEVICE.model}`);
+    out('&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:\'&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Kernel: Darwin 24.0.0');
+    out('&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:\'&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Shell: zsh 5.9');
+    out(`&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:\'&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Packages: ${state.installed.length}`);
+    out(`&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:\'&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Status: ${state.jailbroken ? 'Jailbroken' : 'Stock'}`, 'o-ok');
   },
-  ls(args) {
-    const p = resolvePath(args[0]);
+  ls(a) {
+    const p = resolve(a[0]);
     const dirs = VFS_DIRS[p];
-    const files = Object.keys(VFS_FILES).filter(f => {
-      const parent = f.substring(0, f.lastIndexOf('/')) || '/';
-      return parent === p;
-    });
+    const files = Object.keys(VFS_FILES).filter(f => (f.substring(0, f.lastIndexOf('/')) || '/') === p);
     if (!dirs && !files.length) {
-      if (VFS_FILES[p]) return out(p, '');
-      return out(`ls: ${args[0] || p}: No such file or directory`, 'o-err');
+      if (VFS_FILES[p]) return out(p);
+      return out(`ls: ${a[0] || p}: No such file or directory`, 'o-err');
     }
     out((dirs || []).map(d => `<span class="o-acc">${d}/</span>`).join('  ') +
         (files.length ? '  ' + files.map(f => f.split('/').pop()).join('  ') : ''));
   },
-  cd(args) {
-    const p = resolvePath(args[0] || '/');
-    if (VFS_DIRS[p]) { shell.cwd = p; return; }
-    out(`cd: no such file or directory: ${args[0]}`, 'o-err');
+  cd(a) {
+    const p = resolve(a[0] || '/');
+    if (VFS_DIRS[p]) { sh.cwd = p; return; }
+    out(`cd: no such file or directory: ${a[0]}`, 'o-err');
   },
-  pwd() { out(shell.cwd); },
-  cat(args) {
-    if (!args[0]) return out('usage: cat <file>', 'o-err');
-    const p = resolvePath(args[0]);
-    if (VFS_FILES[p] !== undefined) return out(escapeHtml(VFS_FILES[p]).replace(/\n/g, '<br>'));
-    out(`cat: ${args[0]}: No such file or directory`, 'o-err');
+  pwd() { out(sh.cwd); },
+  cat(a) {
+    if (!a[0]) return out('usage: cat <file>', 'o-err');
+    const p = resolve(a[0]);
+    if (VFS_FILES[p] !== undefined) return out(esc(VFS_FILES[p]).replace(/\n/g, '<br>'));
+    out(`cat: ${a[0]}: No such file or directory`, 'o-err');
   },
-  echo(args) { out(escapeHtml(args.join(' '))); },
+  echo(a) { out(esc(a.join(' '))); },
   whoami() { out('root'); },
   id() { out('uid=0(root) gid=0(wheel) groups=0(wheel),501(mobile)'); },
-  uname(args) {
-    if (args.includes('-a')) out('Darwin iPhone 24.0.0 Darwin Kernel Version 24.0.0: Dopamine X rootless (simulated) arm64e');
+  uname(a) {
+    if (a.includes('-a')) out('Darwin iPhone 24.0.0 Darwin Kernel Version 24.0.0: Dopamine X rootless (simulated) arm64e');
     else out('Darwin');
   },
   uptime() {
-    const d = new Date();
-    out(`${d.toTimeString().slice(0, 8)} up ${Math.floor(rand(1, 40))} days, load averages: 0.42 0.38 0.31`);
+    out(`${new Date().toTimeString().slice(0, 8)} up ${Math.floor(rand(1, 40))} days, load avg: 0.42 0.38 0.31`);
   },
   date() { out(new Date().toString()); },
   ps() {
@@ -1263,34 +1999,31 @@ const CMDS = {
     out('   28 ??       0:03.11 SpringBoard');
     out('   54 ??       0:01.02 backboardd');
     out('  122 ??       0:00.42 jailbreakd');
-    out('  187 ??       0:00.18 dropbear');
     out('  301 ttys000  0:00.01 -zsh');
   },
   df() {
     out('Filesystem      Size   Used  Avail Capacity  Mounted on', 'o-dim');
     out('/dev/disk0s1s1  64Gi   38Gi   26Gi    60%    /');
     out('/dev/disk0s1s2   8Gi    3Gi    5Gi    38%    /private/var');
-    out('devfs           1Ki    1Ki     0Bi  100%    /dev');
   },
-  dpkg(args) {
+  dpkg() {
     if (!state.installed.length) return out('dpkg: no packages installed', 'o-dim');
-    out('Desired=Unknown/Install/Remove/Purge', 'o-dim');
     out('||/ Name                 Version      Description', 'o-dim');
     out('+++-====================-============-=========================');
-    state.installed.map(pkgById).filter(Boolean).forEach(p => {
-      out(`ii  ${p.name.padEnd(20)} ${p.ver.padEnd(12)} ${p.desc}`);
+    state.installed.map(byId).filter(Boolean).forEach(p => {
+      out(`ii  ${p.name.padEnd(20)} ${p.ver.padEnd(12)} ${p.desc.replace(/&amp;/g, '&')}`);
     });
   },
-  apt(args) {
-    if (args[0] === 'list' || !args.length) {
+  apt(a) {
+    if (a[0] === 'list' || !a.length) {
       out('Listing available packages…', 'o-dim');
       PACKAGES.forEach(p => {
-        const mark = state.installed.includes(p.id) ? ' <span class="o-ok">[installed]</span>' : '';
-        out(`${p.name}/${p.repo} ${p.ver}${mark}`);
+        const m = state.installed.includes(p.id) ? ' <span class="o-ok">[installed]</span>' : '';
+        out(`${p.name}/${p.repo} ${p.ver}${m}`);
       });
       return;
     }
-    out(`apt: unknown subcommand '${args[0]}'`, 'o-err');
+    out(`apt: unknown subcommand '${a[0]}'`, 'o-err');
   },
   uicache() {
     out('Rebuilding icon cache…', 'o-dim');
@@ -1300,26 +2033,19 @@ const CMDS = {
     out('Reloading SpringBoard…', 'o-warn');
     setTimeout(() => respring('SpringBoard reload…'), 400);
   },
-  open(args) {
-    const app = (args[0] || '').toLowerCase();
-    const map = { sileo: 'sileo', terminal: 'terminal', settings: 'settings', files: 'files', about: 'about' };
-    if (map[app]) {
-      out(`Launching ${args[0]}…`, 'o-ok');
-      setTimeout(() => launchApp(map[app]), 350);
-    } else {
-      out(`open: application not found: ${args[0] || ''}`, 'o-err');
-    }
+  open(a) {
+    const app = (a[0] || '').toLowerCase();
+    const map = { sileo:'sileo', terminal:'terminal', settings:'settings', files:'files', about:'about', dopamine:'dopamine' };
+    if (map[app]) { out(`Launching ${a[0]}…`, 'o-ok'); setTimeout(() => launchApp(map[app]), 350); }
+    else out(`open: not found: ${a[0] || ''}`, 'o-err');
   },
-  theme(args) {
-    const themes = { cyan: '#22d3ee', violet: '#a855f7', pink: '#ec4899', emerald: '#34d399', amber: '#fbbf24' };
-    const t = (args[0] || '').toLowerCase();
-    if (themes[t]) {
-      applyAccent(themes[t]);
-      state.accent = themes[t]; save();
-      out(`Accent set to ${t}.`, 'o-ok');
-    } else {
-      out('theme: available → ' + Object.keys(themes).join(', '), 'o-err');
-    }
+  theme(a) {
+    const t = { cyan:'#22d3ee', violet:'#a855f7', pink:'#ec4899', emerald:'#34d399', amber:'#fbbf24' };
+    const k = (a[0] || '').toLowerCase();
+    if (t[k]) {
+      applyAccent(t[k]); state.accent = t[k]; save();
+      out(`Accent set to ${k}.`, 'o-ok');
+    } else out('theme: available → ' + Object.keys(t).join(', '), 'o-err');
   },
   clear() { $('#termOut').innerHTML = ''; },
   matrix() {
@@ -1332,73 +2058,125 @@ const CMDS = {
   },
   jailbreak() { out('Device is already jailbroken (rootless).', 'o-ok'); },
   respring() { out('Respringe…', 'o-warn'); setTimeout(() => respring('Respringe…'), 350); },
-  reboot() {
-    out('Simulating userspace reboot…', 'o-warn');
-    setTimeout(() => respring('Rebooting userspace…'), 700);
-  },
+  reboot() { out('Simulating userspace reboot…', 'o-warn'); setTimeout(() => respring('Rebooting…'), 700); },
   exit() { out('logout', 'o-dim'); showView('home'); }
 };
 
-function runCommand(raw) {
-  const line = raw.trim();
-  if (!line) return;
-  out(`<span class="o-acc">root#</span> <span class="o-cmd">${escapeHtml(line)}</span>`);
-
-  shell.hist.push(line);
-  shell.histIdx = shell.hist.length;
-
-  const parts = line.split(/\s+/);
-  const cmd = parts[0].toLowerCase();
-  const args = parts.slice(1);
-
-  if (CMDS[cmd]) {
-    try { CMDS[cmd](args); }
-    catch (e) { out('shell: ' + e.message, 'o-err'); }
-  } else {
-    out(`zsh: command not found: ${cmd}`, 'o-err');
-  }
+function runCmd(raw) {
+  const line = raw.trim(); if (!line) return;
+  out(`<span class="o-acc">root#</span> <span class="o-cmd">${esc(line)}</span>`);
+  sh.hist.push(line); sh.idx = sh.hist.length;
+  const [cmd, ...args] = line.split(/\s+/);
+  const c = cmd.toLowerCase();
+  if (CMDS[c]) { try { CMDS[c](args); } catch (e) { out('shell: ' + e.message, 'o-err'); } }
+  else out(`zsh: command not found: ${c}`, 'o-err');
 }
-
 $('#termInput').addEventListener('keydown', e => {
-  if (e.key === 'Enter') {
-    runCommand(e.target.value);
-    e.target.value = '';
+  if (e.key === 'Enter') { runCmd(e.target.value); e.target.value = ''; e.preventDefault(); }
+  else if (e.key === 'ArrowUp') {
     e.preventDefault();
-  } else if (e.key === 'ArrowUp') {
-    e.preventDefault();
-    if (shell.histIdx > 0) { shell.histIdx--; e.target.value = shell.hist[shell.histIdx] || ''; }
+    if (sh.idx > 0) { sh.idx--; e.target.value = sh.hist[sh.idx] || ''; }
   } else if (e.key === 'ArrowDown') {
     e.preventDefault();
-    if (shell.histIdx < shell.hist.length - 1) { shell.histIdx++; e.target.value = shell.hist[shell.histIdx] || ''; }
-    else { shell.histIdx = shell.hist.length; e.target.value = ''; }
+    if (sh.idx < sh.hist.length - 1) { sh.idx++; e.target.value = sh.hist[sh.idx] || ''; }
+    else { sh.idx = sh.hist.length; e.target.value = ''; }
   }
 });
 
-/* ============================================================
-   BOOT — runs last, everything above is defined
-   ============================================================ */
-window.addEventListener('load', async () => {
-  applyAccent(state.accent);
-  renderAll();
-  syncSwitches();
+/* ═══════════════════════════════════════════════════════════
+   CONTROL CENTER
+   ═══════════════════════════════════════════════════════════ */
+$$('[data-cc]').forEach(t => t.addEventListener('click', () => {
+  t.classList.toggle('on'); buzz(6); blip(t.classList.contains('on') ? 880 : 440, .04);
+}));
+$('#ccClose').onclick = () => closeCC();
+function openCC() { $('#cc').classList.add('on'); $('#island').classList.add('expanded'); }
+function closeCC() { $('#cc').classList.remove('on'); $('#island').classList.remove('expanded'); }
 
-  await sleep(1900);
+/* ═══════════════════════════════════════════════════════════
+   RENDER ALL
+   ═══════════════════════════════════════════════════════════ */
+function renderAll() {
+  renderApps();
+  syncSwitches();
+  applyAccent(state.accent);
+
+  $('#d-model').textContent = DEVICE.model;
+  $('#d-os').textContent = DEVICE.os;
+  $('#d-chip').textContent = `${DEVICE.chip} · ${DEVICE.arch}`;
+  $('#d-cores').textContent = `${DEVICE.cores} / ${DEVICE.mem}`;
+  $('#d-chain').textContent = state.chain;
 
   if (state.jailbroken) {
-    showView('home');
-    toast('Rootless environment restored', 'ok');
+    $('#d-status').textContent = 'Jailbroken · Rootless';
+    $('#d-status').className = 'kv-v c-ok';
+    $('#fp-tag').textContent = 'ROOTLESS';
+    $('#jbLabel').textContent = 'Re-run Exploit';
+    setPill('Jailbroken · Rootless', true);
+    $('#w-status').textContent = 'Rootless';
+    $('#w-status-sub').textContent = 'Bootstrap active';
+    $('#w-env').textContent = '/var/jb';
+    $('#w-chain').textContent = state.chain.split(' ')[0];
   } else {
-    showView('exploit');
+    $('#d-status').textContent = 'Unjailbroken';
+    $('#d-status').className = 'kv-v c-err';
+    $('#fp-tag').textContent = 'STOCK';
+    $('#w-status').textContent = 'Stock';
+    $('#w-status-sub').textContent = 'Ready to deploy';
   }
+  $('#w-pkgs').textContent = state.installed.length;
+  $$('#chainChips .chip').forEach(c => c.classList.toggle('on', c.dataset.chain === state.chain));
+  $$('#accentChips .chip').forEach(c => c.classList.toggle('on', c.dataset.accent === state.accent));
+}
 
-  // Prime the terminal with a welcome banner once the user opens it
+/* ═══════════════════════════════════════════════════════════
+   PAGE DOTS
+   ═══════════════════════════════════════════════════════════ */
+$('#pages').addEventListener('scroll', () => {
+  const el = $('#pages');
+  const idx = Math.round(el.scrollLeft / el.clientWidth);
+  $$('#dots span').forEach((s, i) => s.classList.toggle('on', i === idx));
+});
+
+/* ═══════════════════════════════════════════════════════════
+   UNLOCK FLOW
+   ═══════════════════════════════════════════════════════════ */
+async function unlock() {
+  const f = $('#faceid');
+  f.classList.add('scanning');
+  buzz([10, 60, 10]);
+  await sleep(1400);
+  f.classList.remove('scanning');
+  f.classList.add('done');
+  buzz([20, 40, 30]);
+  blip(1047, .12, 'sine', .04);
+  await sleep(500);
+  showView('home');
+  if (state.jailbroken) setPill('Jailbroken · Rootless', true);
+}
+$('#unlockBtn').addEventListener('click', unlock);
+$('#view-lock').addEventListener('click', unlock);
+
+/* ═══════════════════════════════════════════════════════════
+   KEYBOARD SHORTCUTS (dev convenience)
+   ═══════════════════════════════════════════════════════════ */
+document.addEventListener('keydown', e => {
+  if (e.target.tagName === 'INPUT') return;
+  if (e.key === 'Escape') { closeCC(); showView('home'); }
+  if (e.key === 'c' && e.ctrlKey) { openCC(); }
+});
+
+/* ═══════════════════════════════════════════════════════════
+   BOOT SEQUENCE
+   ═══════════════════════════════════════════════════════════ */
+window.addEventListener('load', async () => {
+  renderAll();
+  await sleep(2900);
+  showView('lock');
+
   out('Dopamine X Mobile Shell [v3.1.0]', 'o-acc');
   out("Type 'help' for the command directory.", 'o-dim');
   out('', '');
 });
 
-/* Wire the exploit button last */
-$('#jbBtn').addEventListener('click', runExploit);
-</script>
-</body>
-</html>
+$('#jbBtn
